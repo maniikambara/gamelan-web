@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gamelan Bali Synthesizer</title>
+  <meta name="description" content="Aplikasi sintesis bunyi instrumen tradisional Bali — Gangsa, Kendang, Suling" />
+  <meta name="theme-color" content="#0c0805" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── HEADER ─────────────────────────────────────────────────────── -->
+  <header class="app-header">
+    <div class="header-brand">
+      <img src="assets/logo.svg" alt="Logo" class="header-logo" />
+      <div class="header-titles">
+        <div class="header-title">GAMELAN BALI SYNTHESIZER</div>
+        <div class="header-subtitle">Kelompok 1 &nbsp;·&nbsp; Teknik Informatika FMIPA UNUD &nbsp;·&nbsp; 2026</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="note-flash" class="note-flash">—</div>
+      <span id="sample-badge" class="badge badge-syn">Sintetis</span>
+    </div>
+  </header>
+
+  <!-- ── SIDEBAR ────────────────────────────────────────────────────── -->
+  <aside class="app-sidebar">
+    <p class="sidebar-section-title">Instrumen</p>
+    <nav id="inst-nav"></nav>
+  </aside>
+
+  <!-- ── MAIN ───────────────────────────────────────────────────────── -->
+  <main class="app-main" id="instrument-panel">
+    <!-- Rendered dynamically by main.js -->
+  </main>
+
+  <!-- ── RIGHT PANEL ────────────────────────────────────────────────── -->
+  <aside class="app-right">
+
+    <!-- Settings -->
+    <section>
+      <p class="right-section-title">Pengaturan Suara</p>
+      <div id="settings-container" style="display:flex;flex-direction:column;gap:1rem;">
+        <!-- Built by main.js -->
+      </div>
+    </section>
+
+    <!-- Recording -->
+    <section>
+      <p class="right-section-title">Rekaman</p>
+      <div class="rec-controls">
+
+        <button id="rec-start" class="rec-btn rec-btn-start">
+          Mulai Rekam
+        </button>
+        <button id="rec-stop" class="rec-btn rec-btn-stop hidden">
+          Hentikan Rekaman
+        </button>
+
+        <div id="rec-indicator" class="rec-indicator hidden">
+          <div class="rec-dot"></div>
+          <span>REC</span>
+          <span id="rec-elapsed">0.0s</span>
+        </div>
+
+        <div id="rec-output" class="rec-output hidden">
+          <audio id="rec-audio" controls></audio>
+          <a id="rec-download" class="rec-dl-btn" href="#" download>
+            Unduh Rekaman (WebM)
+          </a>
+          <button id="rec-clear" class="rec-clear-btn">Hapus Rekaman</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Sample Upload -->
+    <section>
+      <p class="right-section-title">Upload Sampel Audio</p>
+      <p style="font-size:0.72rem;color:var(--text-dim);margin-bottom:0.75rem;line-height:1.5;">
+        Upload file .wav atau .mp3 per nada. Tanpa sampel, suara sintetis otomatis digunakan.
+      </p>
+      <div class="upload-form">
+        <select id="upload-note-select" class="upload-select"></select>
+        <input type="file" id="upload-file" accept=".wav,.mp3,.ogg,.flac"
+               style="display:none" />
+        <button class="upload-btn" onclick="document.getElementById('upload-file').click()">
+          Pilih File Audio
+        </button>
+        <button id="upload-btn" class="upload-btn">
+          Muat Sampel
+        </button>
+        <div id="upload-status" class="upload-status" style="display:none"></div>
+      </div>
+      <p class="right-section-title" style="margin-top:1rem;">Status Nada</p>
+      <div id="note-status-list" class="note-status-list"></div>
+    </section>
+
+    <!-- Instrument info -->
+    <section id="inst-info-card">
+      <p class="right-section-title">Info Instrumen</p>
+      <div id="inst-info-body" style="font-size:0.76rem;color:var(--text-mid);line-height:1.8;"></div>
+    </section>
+
+  </aside>
+
+  <!-- ── FOOTER ─────────────────────────────────────────────────────── -->
+  <footer class="app-footer">
+    Gamelan Bali Synthesizer &nbsp;·&nbsp; Kelompok 1 &nbsp;·&nbsp; Program Studi Teknik Informatika FMIPA Universitas Udayana &nbsp;·&nbsp; 2026
+  </footer>
+
+</div><!-- /app -->
+
+<!-- Scripts -->
+<script src="js/instruments.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/main.js"></script>
+
+
+
+</body>
+</html>
