@@ -4,8 +4,9 @@ FastAPI serverless function untuk Vercel.
 
 Endpoints:
   POST /api/samples/{instrument}/{note}   Upload sampel audio
-  GET  /api/samples/{instrument}/{note}   Download sampel audio
-  POST /api/export                        Terima rekaman WAV dari client, kembalikan URL
+  GET  /api/samples/{instrument}/{note}   Download/get sampel audio (default atau uploaded)
+  POST /api/synthesize                    Sintesis server-side (alternatif)
+  POST /api/export-recording              Mixing dan export WAV
   GET  /api/instruments                   Daftar instrumen dan nada
   GET  /api/health                        Health check
 """
@@ -13,13 +14,13 @@ Endpoints:
 from __future__ import annotations
 import io, time, base64
 from typing import Dict, Optional
+from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse, Response
 import numpy as np
 from scipy.io import wavfile
-from scipy.signal import butter, sosfilt
 
 # ─── App init ────────────────────────────────────────────────────────────────
 app = FastAPI(title="Gamelan Bali Synthesizer API", version="1.0.0")
@@ -35,6 +36,28 @@ app.add_middleware(
 # ─── In-memory sample store (per serverless instance lifecycle) ───────────────
 # Key: "{instrument}/{note}" → raw audio bytes
 _SAMPLE_STORE: Dict[str, bytes] = {}
+
+def _load_default_samples():
+    """Load default samples from api/samples directory if available."""
+    samples_dir = Path(__file__).parent / "samples"
+    if not samples_dir.exists():
+        return
+    
+    for inst_dir in samples_dir.iterdir():
+        if not inst_dir.is_dir():
+            continue
+        inst_name = inst_dir.name
+        for wav_file in inst_dir.glob("*.wav"):
+            note_name = wav_file.stem  # Filename without .wav extension
+            key = f"{inst_name}/{note_name}"
+            try:
+                with open(wav_file, 'rb') as f:
+                    _SAMPLE_STORE[key] = f.read()
+            except Exception as e:
+                print(f"Warning: Could not load sample {key}: {e}")
+
+# Load default samples on startup
+_load_default_samples()
 
 # ─── Instrument definitions ───────────────────────────────────────────────────
 INSTRUMENTS = {
@@ -68,12 +91,12 @@ INSTRUMENTS = {
         "label": "Suling Bali",
         "description": "Seruling bambu 6 lubang, laras pelog Bali",
         "notes": [
-            {"index": 0, "name": "Ding",  "freq": 523},
-            {"index": 1, "name": "Dong",  "freq": 587},
-            {"index": 2, "name": "Deng",  "freq": 659},
-            {"index": 3, "name": "Dung",  "freq": 784},
-            {"index": 4, "name": "Dang",  "freq": 880},
-            {"index": 5, "name": "Daing", "freq": 1047},
+            {"index": 0, "name": "1 Do",  "freq": 523},
+            {"index": 1, "name": "3 Mi",  "freq": 587},
+            {"index": 2, "name": "4 Fa",  "freq": 659},
+            {"index": 3, "name": "5 Sol", "freq": 784},
+            {"index": 4, "name": "7 Si",  "freq": 880},
+            {"index": 5, "name": "1 Do (octave)", "freq": 1047},
         ],
     },
 }
@@ -99,15 +122,38 @@ def _adsr(a: np.ndarray, sr: int,
     return a * env
 
 def _bandpass(a: np.ndarray, lo: float, hi: float, sr: int) -> np.ndarray:
-    nyq = sr/2
-    lo_n = max(0.001, min(lo/nyq, 0.97))
-    hi_n = min(0.999, max(hi/nyq, lo_n+0.01))
-    sos = butter(4, [lo_n, hi_n], btype='band', output='sos')
-    return sosfilt(sos, a).astype(np.float32)
+    """Simple 1st-order bandpass filter using exponential moving average."""
+    nyq = sr / 2
+    if lo <= 0 or hi <= 0 or lo >= nyq or hi >= nyq or lo >= hi:
+        return a.astype(np.float32)
+    
+    # Highpass: remove low frequencies
+    hp = np.copy(a, dtype=np.float32)
+    alpha_hp = 2 * np.pi * (lo / sr) / (1 + 2 * np.pi * (lo / sr))
+    for i in range(1, len(hp)):
+        hp[i] = alpha_hp * (hp[i-1] + a[i] - a[i-1])
+    
+    # Lowpass: remove high frequencies
+    lp = np.copy(hp, dtype=np.float32)
+    alpha_lp = 2 * np.pi * (hi / sr) / (1 + 2 * np.pi * (hi / sr))
+    for i in range(1, len(lp)):
+        lp[i] = alpha_lp * hp[i] + (1 - alpha_lp) * lp[i-1]
+    
+    return lp
 
 def _lowpass(a: np.ndarray, cut: float, sr: int) -> np.ndarray:
-    sos = butter(4, min(cut/(sr/2), 0.99), btype='low', output='sos')
-    return sosfilt(sos, a).astype(np.float32)
+    """Simple 1st-order lowpass filter using exponential moving average."""
+    if cut <= 0 or cut >= sr/2:
+        return a.astype(np.float32)
+    
+    alpha = 2 * np.pi * (cut / sr) / (1 + 2 * np.pi * (cut / sr))
+    result = np.zeros_like(a, dtype=np.float32)
+    result[0] = a[0]
+    
+    for i in range(1, len(a)):
+        result[i] = alpha * a[i] + (1 - alpha) * result[i-1]
+    
+    return result
 
 def _to_wav(audio: np.ndarray, sr: int = SAMPLE_RATE) -> bytes:
     pcm = (np.clip(audio, -1, 1) * 32767).astype(np.int16)
@@ -216,6 +262,43 @@ def get_sample(instrument: str, note: str):
     if key not in _SAMPLE_STORE:
         raise HTTPException(404, "Sample not found")
     return Response(content=_SAMPLE_STORE[key], media_type="audio/wav")
+
+@app.post("/api/play-note")
+async def play_note(request: Request):
+    """
+    Play a note and return audio as WAV stream.
+    Body: { instrument, note_index, note_name, freq, params }
+    """
+    body = await request.json()
+    inst  = body.get("instrument")
+    freq  = float(body.get("freq", 440))
+    idx   = int(body.get("note_index", 0))
+    note_name = body.get("note_name", "")
+    p     = body.get("params", {})
+
+    key = f"{inst}/{note_name}"
+    if key in _SAMPLE_STORE:
+        wav = process_sample(_SAMPLE_STORE[key], freq, inst, p)
+    elif inst == "gangsa":
+        wav = synth_gangsa(freq,
+                           resonance=p.get("resonance",0.5),
+                           gain=p.get("gain",0.8),
+                           ombak=p.get("ombak",6),
+                           release_ms=p.get("release_ms",2000))
+    elif inst == "kendang":
+        if idx % 2 == 0:
+            wav = synth_kendang_tengah(freq, p.get("gain",0.8),
+                                       p.get("depth",0.6), p.get("release_ms",180))
+        else:
+            wav = synth_kendang_pinggir(freq, p.get("gain",0.8),
+                                        p.get("dryness",0.7), p.get("release_ms",80))
+    elif inst == "suling":
+        wav = synth_suling(freq, p.get("gain",0.8),
+                           p.get("breath",0.2), p.get("attack_ms",90))
+    else:
+        raise HTTPException(400, f"Unknown instrument: {inst}")
+
+    return Response(content=wav, media_type="audio/wav")
 
 @app.post("/api/synthesize")
 async def synthesize(request: Request):

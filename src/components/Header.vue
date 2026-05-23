@@ -1,0 +1,24 @@
+<template>
+  <header class="app-header">
+    <div class="header-brand">
+      <img src="/assets/logo.svg" alt="Logo" class="header-logo" />
+      <div class="header-titles">
+        <div class="header-title">GAMELAN BALI SYNTHESIZER</div>
+        <div class="header-subtitle">Kelompok 1 · Teknik Informatika FMIPA UNUD · 2026</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="note-flash" class="note-flash">{{ lastNote || '—' }}</div>
+      <span class="badge badge-syn">Sintetis</span>
+    </div>
+  </header>
+</template>
+
+<script>
+export default {
+  props: {
+    currentInstrument: String,
+    lastNote: String,
+  },
+}
+</script>

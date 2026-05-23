@@ -1,16 +1,16 @@
 # Gamelan Bali Synthesizer
 
-A web-based interactive synthesizer that recreates the sounds of three traditional Balinese instruments: Gangsa, Kendang, and Suling. Built with zero-latency Web Audio API synthesis and client-side sample playback, featuring real-time audio recording capabilities.
+A web-based interactive synthesizer built with Vue.js and Python that recreates the sounds of three traditional Balinese instruments: Gangsa, Kendang, and Suling. The synthesizer combines authentic instrument modeling with an interactive Vue.js frontend and a Python FastAPI backend for real-time audio synthesis and recording.
 
 ## Overview
 
-This project is an academic work by Group 1 from the Department of Computer Science, Faculty of Mathematics and Natural Sciences, Udayana University (2026). The synthesizer combines authentic instrument modeling with interactive visual feedback to provide an immersive experience of Balinese musical tradition.
+This project is an academic work by Group 1 from the Department of Computer Science, Faculty of Mathematics and Natural Sciences, Udayana University (2026). The synthesizer provides an immersive, interactive experience of Balinese musical tradition through accurate acoustic modeling and responsive visual feedback.
 
 ## Features
 
 ### Instruments
 
-**Gangsa** — A metallic xylophone-like instrument with ten metal bars tuned to the Balinese pelog scale. Features realistic metallic timbre with detuning effects (ombak) that create the characteristic beating and resonance of the physical instrument.
+**Gangsa** — A metallic xylophone-like instrument with ten metal bars tuned to the Balinese pelog scale. Features realistic metallic timbre with detuning effects (ombak) that create characteristic beating and resonance effects.
 
 **Kendang** — A two-faced drum with four distinct playing techniques: center and rim strikes on both front and back faces. Produces tonal and percussive timbres that serve as the rhythmic foundation in Balinese ensembles.
 
@@ -18,9 +18,9 @@ This project is an academic work by Group 1 from the Department of Computer Scie
 
 ### Core Capabilities
 
-- **Real-time Synthesis** — All sounds are generated on the client using Web Audio API oscillators, filters, and noise generators. No server round-trip required for playback.
-- **Sample Playback** — Upload custom WAV, MP3, OGG, or FLAC audio samples for any note. Samples are decoded and cached in memory for immediate playback.
-- **Audio Recording** — Record entire sessions in WebM format and download the resulting audio file.
+- **Server-side Synthesis** — All sounds are synthesized on the backend using NumPy and SciPy, with real-time parameter adjustment for responsive, expressive playing.
+- **Custom Samples** — Upload WAV, MP3, OGG, or FLAC audio files for any note. Samples are decoded and cached for immediate playback, with optional resonance filtering applied.
+- **Audio Recording** — Record entire sessions and download as WAV format with automatic mixing and normalization.
 - **Parameter Control** — Fine-tune each instrument's acoustic characteristics (resonance, attack time, release duration, breath intensity, etc.) via interactive sliders.
 - **Visual Feedback** — Click-responsive overlays highlight playing zones and display note names in real-time.
 - **Responsive Design** — Optimized for desktop and tablet browsers; adapts gracefully to smaller screens.
@@ -29,63 +29,128 @@ This project is an academic work by Group 1 from the Department of Computer Scie
 
 ```
 gamelan-web/
-├── index.html              # Main HTML page
-├── css/
-│   └── style.css          # Complete styling (2-column to single-column responsive)
-├── js/
-│   ├── instruments.js     # Instrument definitions and hit-zone detection
-│   ├── audio.js           # Web Audio API engine (synthesis, recording, playback)
-│   └── main.js            # UI orchestration and state management
-├── api/
-│   └── index.py           # FastAPI backend for advanced sample processing
-├── assets/
+├── public/                 # Static assets
+│   ├── index.html         # HTML entry point
 │   ├── logo.svg           # Application logo
 │   ├── gangsa.png         # Gangsa instrument image
 │   ├── kendang.png        # Kendang instrument image
 │   ├── suling.png         # Suling instrument image
 │   └── snare.png          # Kendang snare hit-zone reference
+├── src/                    # Vue.js source code
+│   ├── main.js            # Application entry point
+│   ├── App.vue            # Root component with state management
+│   ├── style.css          # Global styles
+│   ├── instruments.js     # Instrument definitions and hit-zone detection
+│   ├── audio.js           # API client for backend synthesis and recording
+│   └── components/        # Vue components
+│       ├── Header.vue         # Header with title and note display
+│       ├── Sidebar.vue        # Instrument navigation
+│       ├── InstrumentPanel.vue    # Main instrument display router
+│       ├── SettingsPanel.vue      # Audio parameter controls
+│       ├── RecordingPanel.vue     # Recording controls and playback
+│       ├── SampleUpload.vue       # Sample file upload interface
+│       └── instruments/       # Instrument-specific panels
+│           ├── GangsaPanel.vue    # Interactive gangsa display
+│           ├── KendangPanel.vue   # Dual-drum interface
+│           └── SulingPanel.vue    # Flute hole selector
+├── api/                    # Python FastAPI backend
+│   ├── index.py           # FastAPI server with synthesis endpoints
+│   ├── requirements.txt    # Python dependencies
+│   └── samples/           # [OPTIONAL] Default sample directory
+│       ├── gangsa/        # Gangsa note samples
+│       ├── kendang/       # Kendang sound samples
+│       └── suling/        # Suling note samples
+├── vite.config.js         # Vite build configuration
 ├── vercel.json            # Vercel deployment configuration
-└── .gitignore
+├── package.json           # Node.js dependencies
+└── README.md              # This file
 ```
 
 ## Architecture
 
-### Frontend (Client-Side)
+### Frontend (Vue.js 3)
 
-The application is entirely static on the frontend. Three JavaScript modules work together:
+The Vue.js frontend is a component-based single-page application that manages the user interface and communicates with the backend API for synthesis and recording.
 
-- **instruments.js** — Defines instrument parameters (frequencies, image dimensions, hit zones) and implements hit detection for canvas-based interaction.
-- **audio.js** — Encapsulates the Web Audio API context, synthesis functions, sample buffering, and recording logic. Deferred context initialization respects browser autoplay policies.
-- **main.js** — Manages UI state, renders dynamic panels for each instrument, handles event listeners, and coordinates synthesis parameter updates.
+- **App.vue** — Root component that manages global state (current instrument, synthesis parameters, currently playing note)
+- **Header.vue** — Displays application title, logo, and last played note
+- **Sidebar.vue** — Instrument navigation and selection
+- **InstrumentPanel.vue** — Dynamic component router that displays the selected instrument interface
+- **Instrument Components** — GangsaPanel, KendangPanel, SulingPanel implement canvas-based hit detection and note triggering
+- **SettingsPanel.vue** — Parameter sliders for instrument customization (resonance, gain, breath, attack, release, etc.)
+- **RecordingPanel.vue** — Controls for recording sessions and downloading WAV files
+- **SampleUpload.vue** — File upload interface for custom instrument samples
+- **audio.js** — API client class that handles communication with the backend synthesizer, recording, and sample management
 
-### Backend (Optional)
+### Backend (Python FastAPI)
 
-The FastAPI backend (`api/index.py`) provides optional advanced features:
+The FastAPI backend provides real-time audio synthesis, sample management, and recording export:
 
-- Sample upload and caching
-- Server-side synthesis (advanced DSP processing)
-- Audio export with mixing
+- **Synthesis Endpoints** — `/api/synthesize` generates WAV audio on-demand based on instrument, note, and parameters
+- **Sample Management** — `/api/samples/{instrument}/{note}` for uploading and retrieving custom samples
+- **Recording Export** — `/api/export-recording` mixes multiple synthesis events into a single WAV file
+- **Metadata** — `/api/instruments` returns instrument and note definitions, `/api/health` for health checks
+- **In-Memory Caching** — Uploaded samples and default samples are cached during the serverless function lifetime for fast playback
 
-The backend is entirely optional for the core synthesizer experience and is used primarily for production deployments on Vercel.
+### Synthesis Algorithms
+
+**Gangsa** — Five inharmonic partials at ratios [1.0, 2.756, 5.404, 8.933, 13.35] create the metallic ring. A detuned copy (ombak frequency, default 6 Hz) is mixed at lower amplitude to produce beating effects. Bandpass resonance filter emphasizes the fundamental.
+
+**Kendang Tengah (Center)** — A pitched sine component (fundamental) combined with bandpass-filtered noise for body resonance. The depth parameter blends between tonal and noisy character.
+
+**Kendang Pinggir (Rim)** — Highpass-filtered noise with an exponentially decaying square wave click. The dryness parameter controls the balance between click and resonance.
+
+**Suling Bali** — Three harmonics (fundamental, 2x, 3x) with amplitude envelope controlled by attack time. Optional breath noise (bandpass-filtered at 1.5x fundamental) adds realism.
+
+All synthesis uses ADSR (Attack-Decay-Sustain-Release) envelopes calibrated to the physical characteristics of each instrument.
 
 ## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm (for frontend development and building)
+- Python 3.8+ (for running the backend locally)
+- Modern web browser with Web Audio API support
 
 ### Local Development
 
 1. Clone or download the repository.
-2. Serve the directory with any HTTP server:
+
+2. Install Node.js dependencies:
+
    ```bash
-   python -m http.server 8000
-   # or
-   npx http-server -p 8000
+   npm install
    ```
-3. Open `http://localhost:8000` in a modern web browser.
 
-### Browser Requirements
+3. Start the Vite development server:
 
-- Modern browser with Web Audio API support (Chrome, Firefox, Safari, Edge)
-- JavaScript enabled
-- Audio permission for recording (if using recording feature)
+   ```bash
+   npm run dev
+   ```
+
+   The frontend is now accessible at `http://localhost:5173`.
+
+4. In a separate terminal, start the Python backend:
+
+   ```bash
+   cd api
+   pip install -r requirements.txt
+   python -m uvicorn index:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
+   The backend API is now available at `http://localhost:8000`.
+
+5. Open `http://localhost:5173` in your browser and begin playing instruments. The development server automatically proxies `/api/*` requests to the backend on port 8000.
+
+### Building for Production
+
+Build the Vue.js frontend for production:
+
+```bash
+npm run build
+```
+
+The compiled frontend is output to the `dist/` directory. For Vercel deployment, the `vercel.json` configuration automatically builds and deploys both the frontend and backend.
 
 ## Usage
 
@@ -97,134 +162,135 @@ The backend is entirely optional for the core synthesizer experience and is used
    - **Kendang**: Click on the drum face; center (Tung) vs. rim (Pak) based on distance from center.
    - **Suling**: Click on any of the six finger holes.
 
-### Customizing Sound
+### Adjusting Sound Parameters
 
-1. Adjust parameters in the right panel under "Pengaturan Suara" (Sound Settings):
-   - **Volume** — Master output level.
-   - **Instrument-Specific Controls**:
-     - Gangsa: Resonance, ombak (beating) frequency, release duration.
-     - Kendang: Tung depth (tonal vs. noise), Pak dryness (click vs. resonance).
-     - Suling: Attack time, breath intensity.
+Use the sliders in the "Pengaturan Suara" (Sound Settings) panel on the right to fine-tune each instrument's characteristics. Changes apply immediately to the next note played. Parameters persist during the session but reset on page reload.
 
-### Recording
+**Available parameters:**
 
-1. Click "Mulai Rekam" (Start Recording) in the right panel.
-2. Play the instruments to record your session.
+- **Volume** — Master output level
+- **Resonance** — Emphasis on fundamental frequency
+- **Gangsa-Specific**:
+  - Ombak (Detuning) — Frequency offset for beating effects
+  - Release (ms) — Duration of decay tail
+- **Kendang-Specific**:
+  - Depth — Blend between tonal and noisy character (Tung)
+  - Dryness — Balance between click and resonance (Pak)
+- **Suling-Specific**:
+  - Breath — Intensity of breath noise
+  - Attack (ms) — Time to reach full volume
+
+### Recording Sessions
+
+1. Click "Mulai Rekam" (Start Recording) to begin recording.
+2. Play the instruments; all synthesized audio is captured.
 3. Click "Hentikan Rekaman" (Stop Recording) to finalize.
-4. Download the WebM file or play it back immediately.
-5. Click "Hapus Rekaman" (Clear Recording) to discard and start over.
+4. Download the resulting WAV file or play it back in the browser.
+5. Click "Hapus Rekaman" (Clear Recording) to discard and start a new session.
 
-### Using Custom Samples
+### Uploading Custom Samples
 
-1. Under "Upload Sampel Audio", select the note you wish to replace.
-2. Click "Pilih File Audio" and select a WAV, MP3, OGG, or FLAC file.
-3. Click "Muat Sampel" (Load Sample).
-4. The status list shows a green dot for uploaded samples; yellow for synthesized notes.
-5. Playing a note with a loaded sample uses the sample instead of synthesis.
+1. In the "Upload Sampel Audio" section, select the note you wish to replace from the dropdown.
+2. Click "Pilih atau seret file" and select a WAV, MP3, OGG, or FLAC file.
+3. The sample is uploaded to the backend and cached in memory.
+4. The next time you play that note, the custom sample plays instead of synthesized audio.
+5. To return to synthesis, reload the page (samples are per-session).
 
-## Technical Details
+### Default Samples (Optional)
 
-### Synthesis Algorithm
+To set up default samples:
 
-**Gangsa** — Five inharmonic partials at ratios [1.0, 2.756, 5.404, 8.933, 13.35] create the metallic ring. A detuned copy at +ombak frequency (default 6 Hz) is mixed at lower amplitude to produce beating effects. Bandpass resonance filter emphasizes the fundamental, controlled by the resonance parameter.
+1. Create directory structure in `api/samples/`:
 
-**Kendang Tengah (Center)** — A pitched sine component (fundamental) dominates with bandpass-filtered noise for body resonance. The depth parameter blends between tonal and noisy character.
+   ```
+   api/samples/
+   ├── gangsa/
+   │   ├── Ding.wav, Dong.wav, Deng.wav, Deung.wav, Dung.wav,
+   │   ├── Dang.wav, Daing.wav, Ding².wav, Dong².wav, Deng².wav
+   ├── kendang/
+   │   ├── Tung Tengah · Muka.wav
+   │   ├── Pak Pinggir · Muka.wav
+   │   ├── Tung Tengah · Belakang.wav
+   │   └── Pak Pinggir · Belakang.wav
+   └── suling/
+       ├── 1 Do.wav, 3 Mi.wav, 4 Fa.wav, 5 Sol.wav, 7 Si.wav
+       └── 1 Do (octave).wav
+   ```
 
-**Kendang Pinggir (Rim)** — Highpass-filtered noise with an exponentially decaying square wave click. The dryness parameter controls the balance between click and resonance.
-
-**Suling** — Three harmonics (fundamental, 2x, 3x) with amplitude envelope controlled by attack time. Optional breath noise (bandpass-filtered at 1.5x fundamental) adds realism. Subtle sine-wave vibrato (5.5 Hz) modulates the fundamental frequency above the attack phase.
-
-All synthesis uses ADSR (Attack-Decay-Sustain-Release) envelopes calibrated to the physical characteristics of each instrument.
-
-### Recording and Sample Handling
-
-- Recording uses `MediaRecorder` on the `AudioContext` output stream, producing WebM audio.
-- Uploaded samples are decoded using `ctx.decodeAudioData()` and stored in memory indexed by `"instrument/note_name"`.
-- Playback prioritizes samples over synthesis; if no sample exists, synthesis functions are invoked.
-
-### Hit Detection
-
-Each instrument implements a `detectHit(x, y, imgNaturalW, displayW)` method:
-
-- **Gangsa** — Maps x-coordinate to one of 10 bars based on horizontal span.
-- **Kendang** — Calculates distance from snare center; inner radius = Tengah, outer ring = Pinggir.
-- **Suling** — Finds nearest hole within hit radius; no hit if all holes exceed radius.
-
-Coordinates are scaled from display pixels to original image pixel space to maintain accuracy across responsive layout changes.
+2. Backend automatically loads samples on startup.
+3. Samples are cached in memory for fast playback.
+4. If a sample is not available, the synthesizer falls back to procedural synthesis.
 
 ## Deployment
 
-### Vercel Deployment
+### Vercel (Recommended)
 
-This project is configured for serverless deployment on Vercel using the `vercel.json` configuration. The static frontend is served as-is, and the Python backend is invoked on-demand via `/api/*` routes.
+The project is preconfigured for serverless deployment on Vercel.
 
-1. Link your repository to Vercel.
-2. Vercel automatically detects and deploys using the configuration file.
-3. The application is accessible at your Vercel URL.
+1. Push your repository to GitHub.
+2. Connect the repository to Vercel via the Vercel dashboard.
+3. Vercel automatically detects the build configuration and deploys both frontend and backend.
+4. The application is accessible at your Vercel project URL.
 
-### Local Testing Before Deployment
+### Self-Hosted
 
-Verify that all features work locally before pushing to production:
+To run on your own server:
 
-```bash
-python -m http.server 8000
-```
+1. Build the frontend: `npm run build`
+2. Deploy the `dist/` folder as a static website.
+3. Run the backend as a Python application:
 
-Then test each instrument, parameter, recording, and sample upload functionality.
-
-## Performance Considerations
-
-- **Latency** — Web Audio synthesis has sub-50ms latency on modern hardware, providing immediate tactile feedback.
-- **Memory** — Uploaded samples are held in memory for the session. Large samples or many uploads may affect performance on devices with limited RAM.
-- **CPU** — Real-time synthesis is compute-efficient; multiple simultaneous notes are practical on modern machines.
+   ```bash
+   python -m uvicorn api.index:app --host 0.0.0.0 --port 8000
+   ```
 
 ## Browser Compatibility
 
-- Chrome/Chromium: Full support
-- Firefox: Full support
-- Safari 14+: Full support (older versions have limited Web Audio API features)
-- Edge: Full support
+- **Chrome/Chromium** — Full support
+- **Firefox** — Full support
+- **Safari 14+** — Full support
+- **Edge** — Full support
 
-## Credits
+Requires Web Audio API support and JavaScript enabled.
 
-Gamelan Bali Synthesizer — Kelompok 1 (Group 1)  
-Program Studi Teknik Informatika (Department of Computer Science)  
-FMIPA Universitas Udayana (Faculty of Mathematics and Natural Sciences, Udayana University)  
-2026
+## Performance
 
-## License
-
-This project is provided as-is for educational and academic purposes.
+Real-time synthesis on the backend provides responsive, low-latency audio generation. The application has been tested on modern desktop and tablet browsers and maintains smooth performance during normal use. Synthesis latency is typically 100-200ms due to network round-trip time; for zero-latency playback, consider client-side synthesis with the Web Audio API.
 
 ## Troubleshooting
 
-**No Sound?**
-- Ensure browser audio is not muted (check volume icon in browser tab or system settings).
-- Verify JavaScript is enabled and all script files load without errors (check browser console).
-- On first interaction, browsers require user gesture to enable Web Audio; click any instrument to initialize audio context.
+**No sound output** — Verify the backend API is running and accessible. Check the browser console for network errors. If using `npm run dev`, ensure the proxy in `vite.config.js` correctly routes `/api/*` requests to `http://localhost:8000`.
 
-**Sample Won't Load?**
-- Ensure the file format is supported (WAV, MP3, OGG, FLAC).
-- Check browser console for decoding errors; corrupted or unsupported files will show messages.
-- Verify file size is reasonable; extremely large files may cause memory issues.
+**Synthesis requests timeout** — The backend may be slow due to NumPy/SciPy compilation or system load. In production, Vercel cold starts may cause brief delays on the first request.
 
-**Recording Not Working?**
-- Check browser permissions; you may need to grant microphone/audio access (though this app records synthesizer output, not microphone input).
-- Verify browser supports WebM codec (most modern browsers do).
-- Check browser console for MediaRecorder errors.
+**Recording not working** — Verify the backend is reachable and accepting POST requests to `/api/export-recording`. Check browser console for errors.
 
-**Responsive Layout Issues?**
-- Test on intended device/screen size (tablet at ~768px width, phone at ~640px or smaller).
-- The right panel hides below 900px width; content moves to single-column below 640px.
+**Sample upload fails** — Ensure the file is in a supported format (WAV, MP3, OGG, FLAC) and that a note is selected in the dropdown before uploading.
+
+**Audio permission issues** — Browsers require user interaction to enable Web Audio API. Click any instrument once to initialize the audio context.
 
 ## Future Enhancements
 
 Potential directions for expansion:
 
 - MIDI input support for external controllers
-- Preset system for saving/loading instrument configurations
+- Preset system for saving and loading instrument configurations
 - Multi-instrument layering and sequencing
 - Touch gesture support for mobile devices
 - Additional Balinese instruments (Reyong, Ugal, etc.)
 - Spectral analysis and visualization
+- Client-side synthesis option for zero-latency playback
 - Improved sample quality with spectral processing
+
+## Credits
+
+Gamelan Bali Synthesizer — Kelompok 1 (Group 1)
+Program Studi Teknik Informatika (Department of Computer Science)
+FMIPA Universitas Udayana (Faculty of Mathematics and Natural Sciences, Udayana University)
+2026
+
+Built with Vue.js 3, Vite, FastAPI, NumPy, and SciPy.
+
+## License
+
+This project is provided as-is for educational and academic purposes.
