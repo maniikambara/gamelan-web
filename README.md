@@ -18,10 +18,10 @@ This project is an academic work by Group 1 from the Department of Computer Scie
 
 ### Core Capabilities
 
-- **Server-side Synthesis** — All sounds are synthesized on the backend using NumPy and SciPy, with real-time parameter adjustment for responsive, expressive playing.
-- **Custom Samples** — Upload WAV, MP3, OGG, or FLAC audio files for any note. Samples are decoded and cached for immediate playback, with optional resonance filtering applied.
-- **Audio Recording** — Record entire sessions and download as WAV format with automatic mixing and normalization.
-- **Parameter Control** — Fine-tune each instrument's acoustic characteristics (resonance, attack time, release duration, breath intensity, etc.) via interactive sliders.
+- **Client-side Synthesis** — All sounds are synthesized instantly in the browser using the Web Audio API with zero latency. Each instrument has carefully tuned oscillators and filters to approximate traditional Balinese instrument timbre.
+- **Real-time Parameter Adjustment** — Fine-tune each instrument's acoustic characteristics (resonance, gain, breath intensity, attack time, release duration, detuning effects) via interactive sliders. Changes apply immediately to the next note.
+- **Audio Recording** — Record entire sessions and download as WAV format with client-side synthesis and mixing for accurate playback.
+- **Custom Audio Samples** — Upload WAV, MP3, OGG, or FLAC audio files for any note. Uploaded samples are available on the backend for advanced workflows.
 - **Visual Feedback** — Click-responsive overlays highlight playing zones and display note names in real-time.
 - **Responsive Design** — Optimized for desktop and tablet browsers; adapts gracefully to smaller screens.
 
@@ -70,7 +70,7 @@ gamelan-web/
 
 ### Frontend (Vue.js 3)
 
-The Vue.js frontend is a component-based single-page application that manages the user interface and communicates with the backend API for synthesis and recording.
+The Vue.js frontend is a component-based single-page application that manages the user interface and synthesizes audio entirely in the browser using the Web Audio API.
 
 - **App.vue** — Root component that manages global state (current instrument, synthesis parameters, currently playing note)
 - **Header.vue** — Displays application title, logo, and last played note
@@ -79,20 +79,32 @@ The Vue.js frontend is a component-based single-page application that manages th
 - **Instrument Components** — GangsaPanel, KendangPanel, SulingPanel implement canvas-based hit detection and note triggering
 - **SettingsPanel.vue** — Parameter sliders for instrument customization (resonance, gain, breath, attack, release, etc.)
 - **RecordingPanel.vue** — Controls for recording sessions and downloading WAV files
-- **SampleUpload.vue** — File upload interface for custom instrument samples
-- **audio.js** — API client class that handles communication with the backend synthesizer, recording, and sample management
+- **SampleUpload.vue** — File upload interface for audio samples
+- **audio.js** — Web Audio API synthesis engine with tuned oscillators and filters for each instrument; handles recording and client-side mixing
 
 ### Backend (Python FastAPI)
 
-The FastAPI backend provides real-time audio synthesis, sample management, and recording export:
+The FastAPI backend provides optional advanced audio synthesis, sample management, and recording export capabilities:
 
-- **Synthesis Endpoints** — `/api/synthesize` generates WAV audio on-demand based on instrument, note, and parameters
-- **Sample Management** — `/api/samples/{instrument}/{note}` for uploading and retrieving custom samples
-- **Recording Export** — `/api/export-recording` mixes multiple synthesis events into a single WAV file
+- **Synthesis Endpoints** — `/api/synthesize` and `/api/play-note` generate audio on-demand using NumPy and SciPy with sophisticated filtering and sample rate conversion
+- **Sample Management** — `/api/samples/{instrument}/{note}` for uploading and retrieving audio samples
+- **Recording Export** — `/api/export-recording` mixes and exports recorded synthesis events to WAV
 - **Metadata** — `/api/instruments` returns instrument and note definitions, `/api/health` for health checks
-- **In-Memory Caching** — Uploaded samples and default samples are cached during the serverless function lifetime for fast playback
+- **In-Memory Caching** — Uploaded samples are cached during the serverless function lifetime for fast playback
 
-### Synthesis Algorithms
+### Synthesis Architecture
+
+**Frontend (Web Audio API)** — The primary audio engine uses the Web Audio API to synthesize all sounds directly in the browser, providing zero-latency playback:
+
+**Gangsa** — Five oscillators at inharmonic ratios [1.0, 2.756, 5.404, 8.933, 13.35] create the metallic ring. A detuned copy is mixed at lower amplitude to produce beating (ombak) effects. A bandpass filter emphasizes the fundamental frequency.
+
+**Kendang Tengah (Center)** — A pitched oscillator combined with highpass-filtered noise for body resonance. Pitch decays exponentially to create the characteristic pitch-drop effect.
+
+**Kendang Pinggir (Rim)** — Highpass-filtered noise with an exponentially decaying click component, creating the sharp percussive attack.
+
+**Suling Bali** — A sine oscillator with a slow attack envelope to simulate breath onset. Optional breath noise adds realism.
+
+**Backend (NumPy/SciPy, Optional)** — Available for advanced workflows:
 
 **Gangsa** — Five inharmonic partials at ratios [1.0, 2.756, 5.404, 8.933, 13.35] create the metallic ring. A detuned copy (ombak frequency, default 6 Hz) is mixed at lower amplitude to produce beating effects. Bandpass resonance filter emphasizes the fundamental.
 
@@ -255,19 +267,21 @@ Requires Web Audio API support and JavaScript enabled.
 
 ## Performance
 
-Real-time synthesis on the backend provides responsive, low-latency audio generation. The application has been tested on modern desktop and tablet browsers and maintains smooth performance during normal use. Synthesis latency is typically 100-200ms due to network round-trip time; for zero-latency playback, consider client-side synthesis with the Web Audio API.
+The Web Audio API frontend provides instant, zero-latency audio synthesis directly in the browser. The application has been tested on modern desktop and tablet browsers and maintains smooth performance during normal use with simultaneous synthesis and recording. Synthesis, recording, and parameter changes all respond immediately without network round-trip delay.
+
+The optional backend synthesis (for advanced workflows) typically completes within 50-200ms depending on system load and NumPy/SciPy compilation overhead.
 
 ## Troubleshooting
 
-**No sound output** — Verify the backend API is running and accessible. Check the browser console for network errors. If using `npm run dev`, ensure the proxy in `vite.config.js` correctly routes `/api/*` requests to `http://localhost:8000`.
+**No sound output** — Verify Web Audio API is supported in your browser. The browser may require user interaction to initialize the audio context. Click any instrument once to enable audio. Check browser console for errors. Ensure JavaScript is enabled.
 
-**Synthesis requests timeout** — The backend may be slow due to NumPy/SciPy compilation or system load. In production, Vercel cold starts may cause brief delays on the first request.
+**Recording not working** — The browser may be preventing audio recording due to security restrictions. This is typically browser/OS specific. Verify that microphone permissions are allowed (even though the application does not use microphone input).
 
-**Recording not working** — Verify the backend is reachable and accepting POST requests to `/api/export-recording`. Check browser console for errors.
-
-**Sample upload fails** — Ensure the file is in a supported format (WAV, MP3, OGG, FLAC) and that a note is selected in the dropdown before uploading.
+**Sample upload fails** — Ensure the file is in a supported format (WAV, MP3, OGG, FLAC) and that a note is selected in the dropdown before uploading. If backend sample playback is desired, ensure the backend API is running and accessible at `/api/samples/`.
 
 **Audio permission issues** — Browsers require user interaction to enable Web Audio API. Click any instrument once to initialize the audio context.
+
+**Backend synthesis endpoint not responding** — If using the backend for advanced synthesis, verify the API is running via `python -m uvicorn api/index:app --host 0.0.0.0 --port 8000`. Cold starts on Vercel may cause brief delays on the first request.
 
 ## Future Enhancements
 
