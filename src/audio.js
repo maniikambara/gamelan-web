@@ -1,9 +1,87 @@
 /**
- * audio.js - Frontend API client for Gamelan Backend Synthesizer
- * All synthesis happens on backend API (api/index.py)
+ * audio.js - Frontend Gamelan Synthesizer
+ * INSTANT synthesis using Web Audio API - NO SERVER DELAY
  */
 
 const API_BASE = '/api'
+
+// Simple synthesizer functions for each instrument
+const synth = {
+  gangsa: (ctx, freq, params, duration = 0.6) => {
+    const now = ctx.currentTime
+    const osc = ctx.createOscillator()
+    const filter = ctx.createBiquadFilter()
+    const gain = ctx.createGain()
+    
+    osc.type = 'sine'
+    osc.frequency.value = freq
+    filter.type = 'lowpass'
+    filter.frequency.value = freq * 2 + (params.resonance || 0.5) * 2000
+    filter.Q.value = 5
+    
+    gain.gain.setValueAtTime(params.gain || 0.8, now)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration)
+    
+    osc.connect(filter)
+    filter.connect(gain)
+    gain.connect(ctx.destination)
+    
+    osc.start(now)
+    osc.stop(now + duration)
+  },
+
+  kendang: (ctx, freq, params, duration = 0.15) => {
+    const now = ctx.currentTime
+    const osc = ctx.createOscillator()
+    const filter = ctx.createBiquadFilter()
+    const gain = ctx.createGain()
+    
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(freq, now)
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.5, now + 0.05)
+    
+    filter.type = 'highpass'
+    filter.frequency.value = freq * 0.8
+    filter.Q.value = (params.resonance || 0.4) * 10
+    
+    gain.gain.setValueAtTime(params.gain || 0.8, now)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration)
+    
+    osc.connect(filter)
+    filter.connect(gain)
+    gain.connect(ctx.destination)
+    
+    osc.start(now)
+    osc.stop(now + duration)
+  },
+
+  suling: (ctx, freq, params, duration = 0.5) => {
+    const now = ctx.currentTime
+    const osc = ctx.createOscillator()
+    const filter = ctx.createBiquadFilter()
+    const gain = ctx.createGain()
+    
+    // Flute-like: sine with slight formant filter
+    osc.type = 'sine'
+    osc.frequency.value = freq
+    
+    filter.type = 'peaking'
+    filter.frequency.value = freq * 1.2
+    filter.gain.value = 5
+    filter.Q.value = 2
+    
+    gain.gain.setValueAtTime(0, now)
+    gain.gain.linearRampToValueAtTime(params.gain || 0.7, now + 0.08) // breath attack
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration)
+    
+    osc.connect(filter)
+    filter.connect(gain)
+    gain.connect(ctx.destination)
+    
+    osc.start(now)
+    osc.stop(now + duration)
+  }
+}
 
 export class AudioEngine {
   constructor() {
@@ -11,12 +89,10 @@ export class AudioEngine {
     this.mediaRecorder = null
     this.recordedChunks = []
     this.recordStartTime = 0
-    this.recordingEvents = [] // Track synthesis events during recording
+    this.recordingEvents = []
+    this.synthCache = {} // Cache synthesized notes
   }
 
-  /**
-   * Initialize Web Audio context for recording and playback only
-   */
   ensureContext() {
     if (this.ctx) return
     this.ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 })
@@ -28,43 +104,38 @@ export class AudioEngine {
   }
 
   /**
-   * Play synthesized note via backend API
-   * Sends synthesis request to backend and plays returned WAV audio
+   * INSTANT client-side synthesis - NO API DELAY
    */
   async synthNote(instrument, noteIndex, noteName, freq, params) {
     try {
-      const response = await fetch(`${API_BASE}/synthesize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instrument,
-          note_index: noteIndex,
-          note_name: noteName,
-          freq,
-          params,
-        }),
-      })
-
-      if (!response.ok) throw new Error(`Synthesis failed: ${response.statusText}`)
-      const data = await response.json()
+      this.ensureContext()
       
-      // Record event if recording
+      // Use appropriate synth engine for instrument
+      const synthFn = synth[instrument] || synth.gangsa
+      const duration = instrument === 'kendang' ? 0.15 : 0.6
+      
+      // Synthesize instantly in browser
+      synthFn(this.ctx, freq, params, duration)
+      
+      // Record if recording
       if (this.mediaRecorder?.state === 'recording') {
         this.recordingEvents.push({
           timestamp_ms: Date.now() - this.recordStartTime,
-          audio_b64: data.audio_b64,
+          instrument,
+          noteName,
+          freq,
+          params: { ...params }
         })
       }
-
-      // Play audio via Web Audio API
-      return this._playAudioData(data.audio_b64)
+      
+      return true
     } catch (error) {
       console.error('Synthesis error:', error)
     }
   }
 
   /**
-   * Decode base64 WAV and play via Web Audio
+   * Decode base64 WAV and play via Web Audio (for uploaded samples)
    */
   async _playAudioData(audio_b64) {
     this.ensureContext()
