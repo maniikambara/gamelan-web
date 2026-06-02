@@ -108,7 +108,7 @@ export default {
 
       drawOverlay()
 
-      canvas.addEventListener('click', async (e) => {
+      canvas.addEventListener('click', (e) => {
         const rect = canvas.getBoundingClientRect()
         const x = e.clientX - rect.left
         const y = e.clientY - rect.top
@@ -117,7 +117,7 @@ export default {
         if (noteIndex === null) return
 
         const note = props.instrument.notes[noteIndex]
-        await emit('play-note', { noteIndex: note.index, noteName: note.name, freq: note.freq })
+        emit('play-note', { noteIndex: note.index, noteName: note.name, freq: note.freq })
 
         highlightedNote = noteIndex
         drawOverlay(noteIndex)

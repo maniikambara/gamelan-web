@@ -62,7 +62,7 @@ export default {
       currentInstrument.value = key
     }
 
-    const playNote = async (noteIndex, noteName, freq) => {
+    const playNote = async ({ noteIndex, noteName, freq }) => {
       lastNote.value = noteName
       await audioEngine.playNote(currentInstrument.value, noteIndex, noteName, freq, params[currentInstrument.value])
     }
@@ -104,7 +104,6 @@ export default {
       playNote,
       updateParam,
       startRecording,
-      stopRecording,
       onSampleLoaded,
       onRecordingStop,
     }

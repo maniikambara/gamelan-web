@@ -17,18 +17,11 @@
 </template>
 
 <script>
-import { INSTRUMENTS } from '../instruments'
-
 export default {
   props: {
     instruments: Object,
     activeInstrument: String,
   },
   emits: ['select'],
-  setup() {
-    return {
-      instruments: INSTRUMENTS,
-    }
-  },
 }
 </script>

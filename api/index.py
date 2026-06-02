@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse, Response
 import numpy as np
 from scipy.io import wavfile
+from scipy.signal import lfilter
 
 # ─── App init ────────────────────────────────────────────────────────────────
 app = FastAPI(title="Gamelan Bali Synthesizer API", version="1.0.0")
@@ -122,38 +123,31 @@ def _adsr(a: np.ndarray, sr: int,
     return a * env
 
 def _bandpass(a: np.ndarray, lo: float, hi: float, sr: int) -> np.ndarray:
-    """Simple 1st-order bandpass filter using exponential moving average."""
+    """1st-order IIR bandpass: highpass at lo Hz, then lowpass at hi Hz."""
     nyq = sr / 2
     if lo <= 0 or hi <= 0 or lo >= nyq or hi >= nyq or lo >= hi:
         return a.astype(np.float32)
-    
-    # Highpass: remove low frequencies
-    hp = np.copy(a, dtype=np.float32)
+
+    x = a.astype(np.float32)
+
+    # Highpass: y[n] = alpha * (y[n-1] + x[n] - x[n-1])
     alpha_hp = 2 * np.pi * (lo / sr) / (1 + 2 * np.pi * (lo / sr))
-    for i in range(1, len(hp)):
-        hp[i] = alpha_hp * (hp[i-1] + a[i] - a[i-1])
-    
-    # Lowpass: remove high frequencies
-    lp = np.copy(hp, dtype=np.float32)
+    hp = lfilter([alpha_hp, -alpha_hp], [1.0, -alpha_hp], x).astype(np.float32)
+
+    # Lowpass applied to highpass output: y[n] = alpha * x[n] + (1-alpha) * y[n-1]
     alpha_lp = 2 * np.pi * (hi / sr) / (1 + 2 * np.pi * (hi / sr))
-    for i in range(1, len(lp)):
-        lp[i] = alpha_lp * hp[i] + (1 - alpha_lp) * lp[i-1]
-    
+    lp = lfilter([alpha_lp], [1.0, -(1 - alpha_lp)], hp).astype(np.float32)
+
     return lp
 
 def _lowpass(a: np.ndarray, cut: float, sr: int) -> np.ndarray:
-    """Simple 1st-order lowpass filter using exponential moving average."""
-    if cut <= 0 or cut >= sr/2:
+    """1st-order IIR lowpass filter: y[n] = alpha * x[n] + (1-alpha) * y[n-1]."""
+    if cut <= 0 or cut >= sr / 2:
         return a.astype(np.float32)
-    
+
+    x = a.astype(np.float32)
     alpha = 2 * np.pi * (cut / sr) / (1 + 2 * np.pi * (cut / sr))
-    result = np.zeros_like(a, dtype=np.float32)
-    result[0] = a[0]
-    
-    for i in range(1, len(a)):
-        result[i] = alpha * a[i] + (1 - alpha) * result[i-1]
-    
-    return result
+    return lfilter([alpha], [1.0, -(1 - alpha)], x).astype(np.float32)
 
 def _to_wav(audio: np.ndarray, sr: int = SAMPLE_RATE) -> bytes:
     pcm = (np.clip(audio, -1, 1) * 32767).astype(np.int16)
@@ -205,7 +199,8 @@ def synth_kendang_pinggir(freq: float, gain: float = 0.8,
     return _to_wav(_normalize(audio)*gain)
 
 def synth_suling(freq: float, gain: float = 0.8,
-                 breath: float = 0.2, attack_ms: float = 90) -> bytes:
+                 breath: float = 0.2, attack_ms: float = 90,
+                 release_ms: float = 600) -> bytes:
     dur = 4.0; t = np.linspace(0, dur, int(SAMPLE_RATE*dur), endpoint=False)
     audio = (np.sin(2*np.pi*freq*t) +
              0.22*np.sin(2*np.pi*freq*2*t) +
@@ -213,7 +208,7 @@ def synth_suling(freq: float, gain: float = 0.8,
     noise = np.random.normal(0,0.12,len(t)).astype(np.float32)
     noise = _bandpass(noise, max(30,freq*0.7), min(freq*4,6000), SAMPLE_RATE)
     audio += breath*noise
-    audio = _adsr(audio, SAMPLE_RATE, attack_ms, 80, 0.88, 600)
+    audio = _adsr(audio, SAMPLE_RATE, attack_ms, 80, 0.88, release_ms)
     return _to_wav(_normalize(audio)*gain)
 
 def process_sample(raw_wav: bytes, freq: float, instrument: str, params: dict) -> bytes:
@@ -294,7 +289,8 @@ async def play_note(request: Request):
                                         p.get("dryness",0.7), p.get("release_ms",80))
     elif inst == "suling":
         wav = synth_suling(freq, p.get("gain",0.8),
-                           p.get("breath",0.2), p.get("attack_ms",90))
+                           p.get("breath",0.2), p.get("attack_ms",90),
+                           p.get("release_ms",600))
     else:
         raise HTTPException(400, f"Unknown instrument: {inst}")
 
@@ -330,7 +326,8 @@ async def synthesize(request: Request):
                                         p.get("dryness",0.7), p.get("release_ms",80))
     elif inst == "suling":
         wav = synth_suling(freq, p.get("gain",0.8),
-                           p.get("breath",0.2), p.get("attack_ms",90))
+                           p.get("breath",0.2), p.get("attack_ms",90),
+                           p.get("release_ms",600))
     else:
         raise HTTPException(400, f"Unknown instrument: {inst}")
 

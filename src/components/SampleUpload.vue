@@ -42,7 +42,6 @@
 
 <script>
 import { ref } from 'vue'
-import { INSTRUMENTS } from '../instruments'
 
 export default {
   props: {
@@ -114,7 +113,7 @@ export default {
       triggerFileInput,
       handleFileChange,
       handleDrop,
-      instruments: Object.values(INSTRUMENTS),
+      instruments: Object.values(props.instruments),
     }
   },
 }
