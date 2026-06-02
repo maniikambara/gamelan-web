@@ -27,7 +27,7 @@ This project is an academic work by Group 1 from the Department of Computer Scie
 
 ## Project Structure
 
-```
+```text
 gamelan-web/
 ├── public/                 # Static assets
 │   ├── index.html         # HTML entry point
@@ -202,7 +202,7 @@ To set up default samples:
 
 1. Create directory structure in `api/samples/`:
 
-   ```
+   ```text
    api/samples/
    ├── gangsa/
    │   ├── Ding.wav, Dong.wav, Deng.wav, Deung.wav, Dung.wav,
