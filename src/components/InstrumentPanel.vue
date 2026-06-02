@@ -16,10 +16,12 @@
 </template>
 
 <script>
-import { computed } from 'vue'
-import GangsaPanel from './instruments/GangsaPanel.vue'
-import KendangPanel from './instruments/KendangPanel.vue'
-import SulingPanel from './instruments/SulingPanel.vue'
+import { computed, defineAsyncComponent } from 'vue'
+
+// Lazy-load instrument panels for faster initial load
+const GangsaPanel = defineAsyncComponent(() => import('./instruments/GangsaPanel.vue'))
+const KendangPanel = defineAsyncComponent(() => import('./instruments/KendangPanel.vue'))
+const SulingPanel = defineAsyncComponent(() => import('./instruments/SulingPanel.vue'))
 
 export default {
   components: {

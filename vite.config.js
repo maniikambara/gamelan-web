@@ -14,6 +14,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['vue'],
+          'instruments': ['./src/instruments.js']
+        }
+      }
+    }
   },
   publicDir: 'public',
 })
