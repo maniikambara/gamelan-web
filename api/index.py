@@ -234,6 +234,16 @@ def process_sample(raw_wav: bytes, freq: float, instrument: str, params: dict) -
 
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
+@app.get("/")
+def root():
+    """Root endpoint - verifies API is responding"""
+    return {"message": "Gamelan API ready", "status": "ok"}
+
+@app.get("/api")
+def api_root():
+    """API root endpoint"""
+    return {"message": "Gamelan Bali Synthesizer API", "version": "1.0.0", "status": "running"}
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "timestamp": time.time()}
