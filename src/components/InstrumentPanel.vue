@@ -9,6 +9,7 @@
       :is="panelComponent"
       :instrument="instrument"
       @play-note="$emit('play-note', $event)"
+      @mute-note="$emit('mute-note', $event)"
     />
 
     <p class="hint-text">{{ hintText }}</p>
@@ -32,29 +33,25 @@ export default {
   props: {
     instrument: Object,
   },
-  emits: ['play-note'],
+  emits: ['play-note', 'mute-note'],
   setup(props) {
     const panelComponent = computed(() => {
       switch (props.instrument.key) {
-        case 'gangsa':
-          return 'GangsaPanel'
-        case 'kendang':
-          return 'KendangPanel'
-        case 'suling':
-          return 'SulingPanel'
-        default:
-          return 'GangsaPanel'
+        case 'gangsa':  return 'GangsaPanel'
+        case 'kendang': return 'KendangPanel'
+        case 'suling':  return 'SulingPanel'
+        default:        return 'GangsaPanel'
       }
     })
 
     const hintText = computed(() => {
       switch (props.instrument.key) {
         case 'gangsa':
-          return 'Klik pada bilah untuk memainkan nada'
+          return 'Keyboard Q–P · Klik tengah bilah = pukul · Klik bawah bilah = mute · Tahan keyboard = mute saat dilepas'
         case 'kendang':
-          return 'Klik pada membran drum — bagian dalam (Tung) atau tepi (Pak)'
+          return 'Keyboard A Tung Muka · S Pak Muka · D Tung Belakang · F Pak Belakang · Klik pada area drum'
         case 'suling':
-          return 'Klik pada lubang untuk memainkan nada'
+          return 'Keyboard Z X C V B N · Klik pada lubang suling'
         default:
           return ''
       }

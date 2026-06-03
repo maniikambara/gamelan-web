@@ -118,6 +118,9 @@ export class AudioEngine {
     /** true once loadSamples() completes */
     this.samplesLoaded = false
 
+    /** Active sources for muting: key → { source, gainNode } */
+    this.activeSources = {}
+
     // Recording state
     this.mediaRecorder  = null
     this.recordedChunks = []
@@ -215,7 +218,16 @@ export class AudioEngine {
     const mode   = hasBuf ? 'sample' : 'synth'
 
     if (hasBuf) {
-      this._playBuffer(this.sampleBuffers[key], params.gain ?? 0.8)
+      const { source, gainNode } = this._playBuffer(
+        this.sampleBuffers[key], params.gain ?? 0.8
+      )
+      // Store for muting; overwrite any previous instance of this note
+      this.activeSources[key] = { source, gainNode }
+      source.onended = () => {
+        if (this.activeSources[key]?.source === source) {
+          delete this.activeSources[key]
+        }
+      }
     } else {
       this._procedural(instrument, noteIndex, freq, params)
     }
@@ -236,7 +248,30 @@ export class AudioEngine {
     return mode
   }
 
-  /** Play an AudioBuffer through the context destination with gain scaling. */
+  /**
+   * Mute (damp) a note — stops the active AudioBufferSource with a quick 30ms
+   * fade so it doesn't click.  No-op if the note is not currently playing or
+   * is using procedural synthesis.
+   *
+   * @param {string} instrument
+   * @param {string} noteName
+   */
+  muteNote(instrument, noteName) {
+    const key = `${instrument}/${noteName}`
+    const active = this.activeSources[key]
+    if (!active) return
+
+    const { gainNode, source } = active
+    // 30ms exponential fade to silence, then hard stop
+    gainNode.gain.setTargetAtTime(0, this.ctx.currentTime, 0.01)
+    setTimeout(() => {
+      try { source.stop() } catch (_) {}
+    }, 60)
+    delete this.activeSources[key]
+  }
+
+  /** Play an AudioBuffer through the context destination with gain scaling.
+   *  Returns { source, gainNode } for later muting. */
   _playBuffer(buffer, gainValue = 0.8) {
     const src  = this.ctx.createBufferSource()
     const gain = this.ctx.createGain()
@@ -245,7 +280,7 @@ export class AudioEngine {
     src.connect(gain)
     gain.connect(this.ctx.destination)
     src.start(0)
-    return src
+    return { source: src, gainNode: gain }
   }
 
   /** Procedural synthesis fallback using Web Audio API oscillators. */

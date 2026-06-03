@@ -6,7 +6,7 @@
 
     <div class="drums-row">
       <div class="drum-cell">
-        <div class="drum-label drum-label-muka">MUKA</div>
+        <div class="drum-label drum-label-muka">MUKA &nbsp;<kbd class="kbd-small">A</kbd> Tung · <kbd class="kbd-small">S</kbd> Pak</div>
         <div class="snare-wrap">
           <img ref="imgMukaRef" :src="instrument.snareImage" class="snare-img" alt="Kendang Muka" draggable="false" />
           <canvas ref="canvasMukaRef" class="hit-canvas"></canvas>
@@ -19,7 +19,7 @@
       </div>
 
       <div class="drum-cell">
-        <div class="drum-label drum-label-belakang">BELAKANG</div>
+        <div class="drum-label drum-label-belakang">BELAKANG &nbsp;<kbd class="kbd-small">D</kbd> Tung · <kbd class="kbd-small">F</kbd> Pak</div>
         <div class="snare-wrap">
           <img ref="imgBelakangRef" :src="instrument.snareImage" class="snare-img" alt="Kendang Belakang" draggable="false" />
           <canvas ref="canvasBelakangRef" class="hit-canvas"></canvas>
@@ -35,7 +35,12 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+
+const KENDANG_KEYS = ['a', 's', 'd', 'f']
+const KEY_LABELS   = ['A', 'S', 'D', 'F']
+// a/d → muka tengah/pinggir;  s/f → belakang tengah/pinggir
+// note indices: 0=muka-tengah, 1=muka-pinggir, 2=belakang-tengah, 3=belakang-pinggir
 
 export default {
   props: {
@@ -145,13 +150,36 @@ export default {
       imgBelakangRef.value?.addEventListener('load', () => {
         setupCanvas('belakang', imgBelakangRef.value, canvasBelakangRef)
       })
+
+      window.addEventListener('keydown', onKeyDown)
     })
 
+    onUnmounted(() => {
+      window.removeEventListener('keydown', onKeyDown)
+    })
+
+    const onKeyDown = (e) => {
+      if (e.repeat) return
+      const ki = KENDANG_KEYS.indexOf(e.key.toLowerCase())
+      if (ki < 0 || ki >= props.instrument.notes.length) return
+      e.preventDefault()
+      const note = props.instrument.notes[ki]
+      emit('play-note', { noteIndex: note.index, noteName: note.name, freq: note.freq })
+      const bagian = ki < 2 ? 'muka' : 'belakang'
+      const canvasRef = ki < 2 ? canvasMukaRef : canvasBelakangRef
+      highlights.value[bagian] = note.index
+      drawOverlay(bagian, note.index)
+      setTimeout(() => {
+        if (highlights.value[bagian] === note.index) {
+          highlights.value[bagian] = null
+          drawOverlay(bagian, null)
+        }
+      }, 400)
+    }
+
     return {
-      imgMukaRef,
-      imgBelakangRef,
-      canvasMukaRef,
-      canvasBelakangRef,
+      imgMukaRef, imgBelakangRef, canvasMukaRef, canvasBelakangRef,
+      KEY_LABELS,
     }
   },
 }

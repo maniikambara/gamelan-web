@@ -29,6 +29,7 @@
       <InstrumentPanel
         :instrument="instruments[currentInstrument]"
         @play-note="playNote"
+        @mute-note="muteNote"
       />
     </main>
     <aside class="app-right">
@@ -41,7 +42,6 @@
         @record-start="startRecording"
         @record-stop="onRecordingStop"
       />
-      <SampleUpload :instruments="instruments" @sample-loaded="onSampleLoaded" />
     </aside>
   </div>
 </template>
@@ -116,8 +116,11 @@ export default {
         currentInstrument.value, noteIndex, noteName, freq,
         params[currentInstrument.value]
       )
-      // playNote returns 'sample' or 'synth'
       if (mode === 'sample' || mode === 'synth') lastSynthMode.value = mode
+    }
+
+    const muteNote = ({ noteName }) => {
+      audioEngine.muteNote(currentInstrument.value, noteName)
     }
 
     // ── Parameter update ───────────────────────────────────────────────────
@@ -132,22 +135,12 @@ export default {
       audioEngine.stopRecording().then(callback)
     }
 
-    // ── Sample upload ──────────────────────────────────────────────────────
-    const onSampleLoaded = async (instrument, noteName, arrayBuffer) => {
-      try {
-        const file = new File([arrayBuffer], `${noteName}.wav`, { type: 'audio/wav' })
-        await audioEngine.uploadSample(instrument, noteName, file)
-      } catch (err) {
-        console.error('Sample upload failed:', err)
-      }
-    }
-
     return {
       instruments, currentInstrument, lastNote, lastSynthMode,
       samplesReady, samplesLoaded, samplesTotal, sampleProgress,
       params, accentColor, accentDim,
-      selectInstrument, playNote, updateParam, startRecording,
-      onSampleLoaded, onRecordingStop,
+      selectInstrument, playNote, muteNote, updateParam, startRecording,
+      onRecordingStop,
     }
   },
 }

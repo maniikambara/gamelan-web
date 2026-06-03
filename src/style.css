@@ -699,3 +699,252 @@ html, body {
     padding: 1rem;
   }
 }
+
+/* ── Gangsa individual bar layout ─────────────────────────────────────────── */
+.gangsa-panel {
+  width: 100%;
+  padding: 0.5rem 0;
+}
+
+.gangsa-kbd-strip {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+  padding: 0 4px;
+}
+
+.kbd-chip {
+  flex: 1;
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: var(--font-serif);
+  color: var(--text-dim);
+  background: rgba(200,150,12,0.08);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 0;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+.gangsa-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  padding: 12px 4px 8px;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(14,8,3,0.85) 100%);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.gangsa-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+  transition: filter 0.12s;
+}
+
+.gangsa-bar:hover { filter: brightness(1.15); }
+
+.bar-label {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.bar-note-name {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(200,150,12,0.7);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.bar-img-wrap {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: box-shadow 0.12s;
+}
+
+.bar--active .bar-img-wrap {
+  box-shadow: 0 0 14px 4px rgba(255, 210, 50, 0.55);
+}
+
+.bar--mute .bar-img-wrap {
+  box-shadow: 0 0 10px 3px rgba(80, 160, 255, 0.5);
+}
+
+.bar-img {
+  display: block;
+  width: auto;
+  height: 175px;          /* bars shown at consistent height */
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Active golden overlay */
+.bar-glow {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 200, 50, 0);
+  pointer-events: none;
+  transition: background 0.1s;
+}
+
+.bar--active .bar-glow {
+  background: rgba(255, 200, 50, 0.28);
+}
+
+.bar--mute .bar-glow {
+  background: rgba(80, 160, 255, 0.22);
+}
+
+/* Mute zone — bottom 28% of each bar */
+.mute-zone {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(30, 80, 160, 0.18) 50%,
+    rgba(30, 80, 160, 0.32) 100%
+  );
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.gangsa-bar:hover .mute-zone { opacity: 1; }
+.bar--mute .mute-zone { opacity: 1; background: rgba(80, 160, 255, 0.35); }
+
+.mute-zone-label {
+  font-size: 8px;
+  color: rgba(120, 180, 255, 0.8);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+/* Keyboard key badge below each bar */
+.bar-kbd {
+  margin-top: 4px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  font-family: var(--font-serif);
+  color: rgba(200,150,12,0.55);
+  background: rgba(200,150,12,0.08);
+  border: 1px solid rgba(200,150,12,0.2);
+  border-radius: 3px;
+  padding: 1px 5px;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+}
+
+/* Zone legend */
+.gangsa-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.legend-play  { color: rgba(255, 200, 50, 0.65); }
+.legend-mute  { color: rgba(100, 160, 255, 0.65); }
+.legend-sep   { opacity: 0.4; }
+
+/* ── Suling horizontal panel ──────────────────────────────────────────────── */
+.suling-panel {
+  width: 100%;
+  padding: 0.5rem 0;
+}
+
+.suling-kbd-strip {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.suling-kbd-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 42px;
+  padding: 4px 6px;
+  background: rgba(126, 200, 80, 0.06);
+  border: 1px solid rgba(126, 200, 80, 0.2);
+  border-radius: 6px;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.suling-kbd-chip.active {
+  background: rgba(126, 200, 80, 0.22);
+  border-color: rgba(126, 200, 80, 0.6);
+}
+
+.suling-chip-note {
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-family: var(--font-serif);
+  color: rgba(126, 200, 80, 0.7);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.suling-chip-key {
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-family: monospace;
+  color: rgba(126, 200, 80, 0.55);
+  background: rgba(126, 200, 80, 0.08);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+.suling-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  border-radius: var(--r-md);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+}
+
+.suling-canvas {
+  display: block;
+  cursor: pointer;
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Keyboard key small badge (used in Kendang) ───────────────────────────── */
+.kbd-small {
+  display: inline-block;
+  font-family: monospace;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  padding: 0 4px;
+  line-height: 1.5;
+  vertical-align: middle;
+}

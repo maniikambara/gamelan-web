@@ -1,159 +1,150 @@
 <template>
-  <div class="img-wrap gangsa-wrap">
-    <img ref="imgRef" :src="instrument.image" class="instrument-img" draggable="false" alt="Gangsa" />
-    <canvas ref="canvasRef" class="hit-canvas"></canvas>
+  <div class="gangsa-panel">
+
+    <!-- Keyboard guide strip -->
+    <div class="gangsa-kbd-strip">
+      <span v-for="(k, i) in KEYS" :key="i" class="kbd-chip">{{ k }}</span>
+    </div>
+
+    <!-- 10 individual bars -->
+    <div class="gangsa-bars">
+      <div
+        v-for="(note, i) in instrument.notes"
+        :key="note.index"
+        class="gangsa-bar"
+        :class="{
+          'bar--active': barStates[i] === 'play',
+          'bar--mute':   barStates[i] === 'mute',
+        }"
+        :title="`${note.name} · ${KEYS[i]} · Klik bawah = mute`"
+        @mousedown="onBarDown($event, i)"
+        @touchstart.prevent="onBarTouch($event, i)"
+      >
+        <!-- Note label -->
+        <div class="bar-label">
+          <span class="bar-note-name">{{ note.name }}</span>
+        </div>
+
+        <!-- Bar image (fills available height) -->
+        <div class="bar-img-wrap">
+          <img
+            :src="`/assets/gangsa/${i + 1}.png`"
+            :alt="note.name"
+            class="bar-img"
+            draggable="false"
+          />
+          <!-- Mute-zone overlay at bottom 28% -->
+          <div class="mute-zone">
+            <span class="mute-zone-label">■</span>
+          </div>
+          <!-- Active glow overlay -->
+          <div class="bar-glow" />
+        </div>
+
+        <!-- Keyboard key badge -->
+        <div class="bar-kbd">{{ KEYS[i] }}</div>
+      </div>
+    </div>
+
+    <!-- Zone legend -->
+    <div class="gangsa-legend">
+      <span class="legend-play">▶ Klik tengah = pukul</span>
+      <span class="legend-sep">·</span>
+      <span class="legend-mute">■ Klik bawah = mute (tahan)</span>
+    </div>
+
   </div>
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue'
+import { reactive, onMounted, onUnmounted } from 'vue'
+
+const KEYS = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P']
+const KEY_TO_IDX = Object.fromEntries(KEYS.map((k, i) => [k.toLowerCase(), i]))
+
+// Y threshold (relative to element height) below which = mute zone
+const MUTE_ZONE_RATIO = 0.72
 
 export default {
   props: {
     instrument: Object,
   },
-  emits: ['play-note'],
+  emits: ['play-note', 'mute-note'],
   setup(props, { emit }) {
-    const imgRef = ref(null)
-    const canvasRef = ref(null)
-    let highlightedNote = null
+    // barStates: index → 'play' | 'mute' | null
+    const barStates = reactive({})
+    // Track keys currently held down (prevents auto-repeat)
+    const heldKeys = new Set()
 
-    const drawOverlay = (activeIndex = null) => {
-      if (!canvasRef.value || !imgRef.value) return
-
-      const canvas = canvasRef.value
-      const img = imgRef.value
-      const ctx = canvas.getContext('2d')
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      const W = canvas.width
-      const H = canvas.height
-      const scaleX = W / props.instrument.imgW
-      const xStart = props.instrument.xStart * scaleX
-      const xEnd = props.instrument.xEnd * scaleX
-      const keyW = (xEnd - xStart) / 10
-
-      props.instrument.notes.forEach((note, i) => {
-        const kx = xStart + i * keyW
-        const isActive = activeIndex === i
-
-        if (isActive) {
-          ctx.fillStyle = 'rgba(200,150,12,0.55)'
-          ctx.fillRect(kx + 1, H * 0.05, keyW - 2, H * 0.85)
-          ctx.strokeStyle = 'rgba(255,200,50,0.9)'
-          ctx.lineWidth = 2
-          ctx.strokeRect(kx + 1, H * 0.05, keyW - 2, H * 0.85)
-        }
-
-        const noteNum = i + 1
-        const numSize = Math.max(18, Math.floor(keyW * 0.35))
-        ctx.font = `bold ${numSize}px 'Cinzel', serif`
-        ctx.fillStyle = isActive ? '#FFD700' : 'rgba(200,150,12,0.7)'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillText(noteNum, kx + keyW / 2, H * 0.35)
-
-        const lx = kx + keyW / 2
-        const ly = H * 0.12
-        const text = note.name
-        const lblSize = Math.max(9, Math.floor(keyW * 0.16))
-        ctx.font = `bold ${lblSize}px 'Cinzel', serif`
-        const tw = ctx.measureText(text).width
-
-        ctx.fillStyle = isActive ? 'rgba(255,200,50,0.95)' : 'rgba(0,0,0,0.7)'
-        const pad = 4
-        const x = lx - tw / 2 - pad
-        const y = ly - 9
-        const w = tw + pad * 2
-        const h = 18
-        const r = 3
-        ctx.beginPath()
-        ctx.moveTo(x + r, y)
-        ctx.lineTo(x + w - r, y)
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r)
-        ctx.lineTo(x + w, y + h - r)
-        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
-        ctx.lineTo(x + r, y + h)
-        ctx.quadraticCurveTo(x, y + h, x, y + h - r)
-        ctx.lineTo(x, y + r)
-        ctx.quadraticCurveTo(x, y, x + r, y)
-        ctx.closePath()
-        ctx.fill()
-
-        ctx.fillStyle = isActive ? '#1a0f0a' : 'rgba(200,150,12,0.9)'
-        ctx.fillText(text, lx, ly)
-
-        if (i > 0) {
-          ctx.strokeStyle = isActive ? 'rgba(255,200,50,0.4)' : 'rgba(200,150,12,0.35)'
-          ctx.lineWidth = i % 2 === 0 ? 1.5 : 1
-          ctx.beginPath()
-          ctx.moveTo(kx, H * 0.05)
-          ctx.lineTo(kx, H * 0.9)
-          ctx.stroke()
-        }
-      })
+    const playBar = (i) => {
+      const note = props.instrument.notes[i]
+      emit('play-note', { noteIndex: note.index, noteName: note.name, freq: note.freq })
+      barStates[i] = 'play'
+      setTimeout(() => {
+        if (barStates[i] === 'play') barStates[i] = null
+      }, 350)
     }
 
-    const setupCanvas = () => {
-      if (!imgRef.value || !canvasRef.value) return
+    const muteBar = (i) => {
+      const note = props.instrument.notes[i]
+      emit('mute-note', { noteIndex: note.index, noteName: note.name })
+      barStates[i] = 'mute'
+      setTimeout(() => {
+        if (barStates[i] === 'mute') barStates[i] = null
+      }, 200)
+    }
 
-      const canvas = canvasRef.value
-      const img = imgRef.value
-      canvas.width = img.offsetWidth
-      canvas.height = img.offsetHeight
-      canvas.style.position = 'absolute'
-      canvas.style.top = '0'
-      canvas.style.left = '0'
+    // Click: check y position to determine play vs mute zone
+    const onBarDown = (event, i) => {
+      const rect = event.currentTarget.getBoundingClientRect()
+      const yRatio = (event.clientY - rect.top) / rect.height
+      if (yRatio > MUTE_ZONE_RATIO) {
+        muteBar(i)
+      } else {
+        playBar(i)
+      }
+    }
 
-      drawOverlay()
+    const onBarTouch = (event, i) => {
+      const touch = event.changedTouches[0]
+      const rect  = event.currentTarget.getBoundingClientRect()
+      const yRatio = (touch.clientY - rect.top) / rect.height
+      if (yRatio > MUTE_ZONE_RATIO) {
+        muteBar(i)
+      } else {
+        playBar(i)
+      }
+    }
 
-      canvas.addEventListener('click', (e) => {
-        const rect = canvas.getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const y = e.clientY - rect.top
+    // Keyboard
+    const onKeyDown = (e) => {
+      if (e.repeat) return
+      const idx = KEY_TO_IDX[e.key.toLowerCase()]
+      if (idx == null || idx >= props.instrument.notes.length) return
+      e.preventDefault()
+      heldKeys.add(idx)
+      playBar(idx)
+    }
 
-        const noteIndex = props.instrument.detectHit(x, y, props.instrument.imgW, canvas.width)
-        if (noteIndex === null) return
-
-        const note = props.instrument.notes[noteIndex]
-        emit('play-note', { noteIndex: note.index, noteName: note.name, freq: note.freq })
-
-        highlightedNote = noteIndex
-        drawOverlay(noteIndex)
-
-        setTimeout(() => {
-          if (highlightedNote === noteIndex) {
-            highlightedNote = null
-            drawOverlay(null)
-          }
-        }, 400)
-      })
-
-      const observer = new ResizeObserver(() => {
-        canvas.width = img.offsetWidth
-        canvas.height = img.offsetHeight
-        drawOverlay(highlightedNote)
-      })
-      observer.observe(img)
+    const onKeyUp = (e) => {
+      const idx = KEY_TO_IDX[e.key.toLowerCase()]
+      if (idx == null || !heldKeys.has(idx)) return
+      e.preventDefault()
+      heldKeys.delete(idx)
+      muteBar(idx)
     }
 
     onMounted(() => {
-      if (imgRef.value && imgRef.value.complete) {
-        setupCanvas()
-      } else if (imgRef.value) {
-        imgRef.value.addEventListener('load', setupCanvas)
-      }
+      window.addEventListener('keydown', onKeyDown)
+      window.addEventListener('keyup', onKeyUp)
     })
 
-    watch(() => props.instrument.key, () => {
-      highlightedNote = null
+    onUnmounted(() => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
     })
 
-    return {
-      imgRef,
-      canvasRef,
-    }
+    return { KEYS, barStates, onBarDown, onBarTouch }
   },
 }
 </script>
