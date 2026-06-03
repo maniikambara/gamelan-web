@@ -1,52 +1,44 @@
 <template>
   <div class="gangsa-panel">
 
-    <!-- Instrument display: gangsa body as background, bars on top -->
+    <!-- Full gangsa image with bar overlays -->
     <div class="gangsa-stage">
-      <!-- Gangsa body background image -->
+      <!-- Base gangsa body image -->
       <img
         src="/assets/gangsa.png"
         alt="Gangsa Bali"
-        class="gangsa-bg"
+        class="gangsa-body"
         draggable="false"
       />
 
-      <!-- Bars row overlaid on top -->
-      <div class="gangsa-bars-row">
-        <div
-          v-for="(note, i) in instrument.notes"
-          :key="note.index"
-          class="g-bar"
-          :class="{
-            'g-bar--hit':  barStates[i] === 'play',
-            'g-bar--mute': barStates[i] === 'mute',
-          }"
-          :title="`${note.name} · ${KEYS[i]}`"
-          @mousedown="onBarDown($event, i)"
-          @touchstart.prevent="onBarTouch($event, i)"
-        >
-          <!-- Note name -->
-          <span class="g-bar-name">{{ note.name }}</span>
-
-          <!-- Bar image wrapper -->
-          <div class="g-bar-frame">
-            <img
-              :src="`/assets/gangsa/${i + 1}.png`"
-              :alt="note.name"
-              class="g-bar-img"
-              draggable="false"
-            />
-            <!-- Hit glow -->
-            <div class="g-bar-glow" />
-            <!-- Mute zone indicator -->
-            <div class="g-bar-mzone">
-              <span>■</span>
-            </div>
-          </div>
-
-          <!-- Key -->
-          <kbd class="g-bar-kbd">{{ KEYS[i] }}</kbd>
-        </div>
+      <!-- Clickable bar zones positioned over each bar in the photo -->
+      <div
+        v-for="(note, i) in instrument.notes"
+        :key="note.index"
+        class="gangsa-hit"
+        :class="{
+          'gangsa-hit--play': barStates[i] === 'play',
+          'gangsa-hit--mute': barStates[i] === 'mute',
+        }"
+        :style="getBarStyle(i)"
+        @mousedown="onBarDown($event, i)"
+        @touchstart.prevent="onBarTouch($event, i)"
+      >
+        <!-- Individual bilah image covers the bar in the photo -->
+        <img
+          :src="`/assets/gangsa/${i + 1}.png`"
+          :alt="note.name"
+          class="gangsa-bilah"
+          draggable="false"
+        />
+        <!-- Glow overlay -->
+        <div class="gangsa-glow" />
+        <!-- Note label -->
+        <span class="gangsa-note-label">{{ note.name }}</span>
+        <!-- Key badge -->
+        <span class="gangsa-key-label">{{ KEYS[i] }}</span>
+        <!-- Mute zone -->
+        <div class="gangsa-mute-zone" />
       </div>
     </div>
 
@@ -69,6 +61,20 @@ const KEYS = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P']
 const KEY_TO_IDX = Object.fromEntries(KEYS.map((k, i) => [k.toLowerCase(), i]))
 const MUTE_ZONE_RATIO = 0.75
 
+// Derived from gangsa.png dimensions (3799 x 2129)
+// xStart=285  xEnd=3593  → bars span 7.50% to 94.56%
+// Each of the 10 bars occupies (3593-285)/10 / 3799 = 8.71% width
+const IMG_W = 3799
+const IMG_H = 2129
+const X_START = 285
+const X_END   = 3593
+const BAR_COUNT = 10
+const BAR_SLOT  = (X_END - X_START) / BAR_COUNT  // ~330.8 px per bar
+
+// Vertical region where bars sit in the photo (in px, then converted to %)
+const BAR_TOP = 170     // top of tallest bar
+const BAR_BOTTOM = 1420 // bottom of bars
+
 export default {
   props: {
     instrument: Object,
@@ -77,6 +83,19 @@ export default {
   setup(props, { emit }) {
     const barStates = reactive({})
     const heldKeys = new Set()
+
+    const getBarStyle = (i) => {
+      const left   = ((X_START + i * BAR_SLOT) / IMG_W) * 100
+      const width  = (BAR_SLOT / IMG_W) * 100
+      const top    = (BAR_TOP / IMG_H) * 100
+      const height = ((BAR_BOTTOM - BAR_TOP) / IMG_H) * 100
+      return {
+        left:   `${left}%`,
+        width:  `${width}%`,
+        top:    `${top}%`,
+        height: `${height}%`,
+      }
+    }
 
     const playBar = (i) => {
       const note = props.instrument.notes[i]
@@ -144,7 +163,7 @@ export default {
       window.removeEventListener('keyup', onKeyUp)
     })
 
-    return { KEYS, barStates, onBarDown, onBarTouch }
+    return { KEYS, barStates, getBarStyle, onBarDown, onBarTouch }
   },
 }
 </script>
