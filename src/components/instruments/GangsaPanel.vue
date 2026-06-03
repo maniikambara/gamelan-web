@@ -1,75 +1,98 @@
 <template>
   <div class="gangsa-panel">
 
-    <!-- Keyboard guide strip -->
-    <div class="gangsa-kbd-strip">
-      <span v-for="(k, i) in KEYS" :key="i" class="kbd-chip">{{ k }}</span>
-    </div>
+    <!-- Full instrument with bars overlaid -->
+    <div class="gangsa-instrument" ref="instrumentRef">
+      <!-- Gangsa body (background) -->
+      <img
+        src="/assets/gangsa.png"
+        alt="Gangsa Bali"
+        class="gangsa-body-img"
+        draggable="false"
+        @load="onBodyLoad"
+        ref="bodyImgRef"
+      />
 
-    <!-- 10 individual bars -->
-    <div class="gangsa-bars">
+      <!-- Clickable bar overlays positioned on top of the body -->
       <div
         v-for="(note, i) in instrument.notes"
         :key="note.index"
-        class="gangsa-bar"
+        class="gangsa-bar-overlay"
         :class="{
           'bar--active': barStates[i] === 'play',
           'bar--mute':   barStates[i] === 'mute',
         }"
+        :style="barPositions[i]"
         :title="`${note.name} · ${KEYS[i]} · Klik bawah = mute`"
         @mousedown="onBarDown($event, i)"
         @touchstart.prevent="onBarTouch($event, i)"
       >
-        <!-- Note label -->
-        <div class="bar-label">
-          <span class="bar-note-name">{{ note.name }}</span>
+        <img
+          :src="`/assets/gangsa/${i + 1}.png`"
+          :alt="note.name"
+          class="gangsa-bar-img"
+          draggable="false"
+        />
+        <!-- Glow overlay -->
+        <div class="gangsa-bar-glow" />
+        <!-- Mute zone indicator -->
+        <div class="gangsa-bar-mute-zone">
+          <span class="gangsa-mute-icon">■</span>
         </div>
+        <!-- Note name label -->
+        <div class="gangsa-bar-note">{{ note.name }}</div>
+        <!-- Key badge -->
+        <div class="gangsa-bar-key">{{ KEYS[i] }}</div>
+      </div>
+    </div>
 
-        <!-- Bar image (fills available height) with gangsa body behind -->
-        <div class="bar-img-wrap">
-          <img
-            src="/assets/gangsa.png"
-            alt=""
-            class="bar-bg-img"
-            draggable="false"
-          />
-          <img
-            :src="`/assets/gangsa/${i + 1}.png`"
-            :alt="note.name"
-            class="bar-img"
-            draggable="false"
-          />
-          <!-- Mute-zone overlay at bottom 28% -->
-          <div class="mute-zone">
-            <span class="mute-zone-label">■</span>
-          </div>
-          <!-- Active glow overlay -->
-          <div class="bar-glow" />
-        </div>
-
-        <!-- Keyboard key badge -->
-        <div class="bar-kbd">{{ KEYS[i] }}</div>
+    <!-- Keyboard guide strip -->
+    <div class="gangsa-keys-row">
+      <div v-for="(note, i) in instrument.notes" :key="'k'+i" class="gangsa-key-cell">
+        <kbd class="gangsa-key-badge"
+          :class="{ 'key--active': barStates[i] === 'play', 'key--mute': barStates[i] === 'mute' }"
+        >{{ KEYS[i] }}</kbd>
+        <span class="gangsa-key-note">{{ note.name }}</span>
       </div>
     </div>
 
     <!-- Zone legend -->
     <div class="gangsa-legend">
-      <span class="legend-play">▶ Klik tengah = pukul</span>
-      <span class="legend-sep">·</span>
-      <span class="legend-mute">■ Klik bawah = mute (tahan)</span>
+      <span class="legend-play">&#9654; Klik = pukul</span>
+      <span class="legend-sep">&#183;</span>
+      <span class="legend-mute">&#9632; Klik bawah = mute</span>
+      <span class="legend-sep">&#183;</span>
+      <span class="legend-kbd">Keyboard Q&ndash;P</span>
     </div>
 
   </div>
 </template>
 
 <script>
-import { reactive, onMounted, onUnmounted } from 'vue'
+import { reactive, ref, computed, onMounted, onUnmounted } from 'vue'
 
 const KEYS = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P']
 const KEY_TO_IDX = Object.fromEntries(KEYS.map((k, i) => [k.toLowerCase(), i]))
 
 // Y threshold (relative to element height) below which = mute zone
-const MUTE_ZONE_RATIO = 0.72
+const MUTE_ZONE_RATIO = 0.75
+
+// Bar positions mapped from the original gangsa.png (3799 x 2129).
+// Each bar is defined by its left%, top%, width%, height% relative to the full image.
+// These were measured from the instrument photo: bars span from ~7.5% to ~94.5% horizontally,
+// and from ~12% to ~68% vertically. Bars are progressively narrower toward the right.
+const BAR_LAYOUT = [
+  { left: 7.5,  top: 15, width: 8.7, height: 53 },
+  { left: 16.4, top: 14, width: 8.6, height: 53 },
+  { left: 25.2, top: 13, width: 8.5, height: 53 },
+  { left: 33.9, top: 12, width: 8.4, height: 53 },
+  { left: 42.5, top: 12, width: 8.3, height: 52 },
+  { left: 51.0, top: 12, width: 8.2, height: 51 },
+  { left: 59.4, top: 12, width: 8.0, height: 50 },
+  { left: 67.6, top: 12, width: 7.8, height: 49 },
+  { left: 75.6, top: 13, width: 7.6, height: 48 },
+  { left: 83.4, top: 13, width: 7.5, height: 48 },
+]
 
 export default {
   props: {
@@ -77,10 +100,23 @@ export default {
   },
   emits: ['play-note', 'mute-note'],
   setup(props, { emit }) {
-    // barStates: index → 'play' | 'mute' | null
     const barStates = reactive({})
-    // Track keys currently held down (prevents auto-repeat)
     const heldKeys = new Set()
+    const instrumentRef = ref(null)
+    const bodyImgRef = ref(null)
+
+    const barPositions = computed(() =>
+      BAR_LAYOUT.map(b => ({
+        left:   `${b.left}%`,
+        top:    `${b.top}%`,
+        width:  `${b.width}%`,
+        height: `${b.height}%`,
+      }))
+    )
+
+    const onBodyLoad = () => {
+      // Force re-render once the image dimensions are known
+    }
 
     const playBar = (i) => {
       const note = props.instrument.notes[i]
@@ -100,7 +136,6 @@ export default {
       }, 200)
     }
 
-    // Click: check y position to determine play vs mute zone
     const onBarDown = (event, i) => {
       const rect = event.currentTarget.getBoundingClientRect()
       const yRatio = (event.clientY - rect.top) / rect.height
@@ -122,7 +157,6 @@ export default {
       }
     }
 
-    // Keyboard
     const onKeyDown = (e) => {
       if (e.repeat) return
       const idx = KEY_TO_IDX[e.key.toLowerCase()]
@@ -150,7 +184,11 @@ export default {
       window.removeEventListener('keyup', onKeyUp)
     })
 
-    return { KEYS, barStates, onBarDown, onBarTouch }
+    return {
+      KEYS, barStates, barPositions,
+      instrumentRef, bodyImgRef,
+      onBodyLoad, onBarDown, onBarTouch,
+    }
   },
 }
 </script>

@@ -700,175 +700,224 @@ html, body {
   }
 }
 
-/* ── Gangsa individual bar layout ─────────────────────────────────────────── */
+/* ── Gangsa instrument layout ─────────────────────────────────────────────── */
 .gangsa-panel {
   width: 100%;
   padding: 0.5rem 0;
 }
 
-.gangsa-kbd-strip {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 6px;
-  padding: 0 4px;
+/* Container for the full instrument */
+.gangsa-instrument {
+  position: relative;
+  width: 100%;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(200, 150, 12, 0.08);
 }
 
-.kbd-chip {
-  flex: 1;
-  text-align: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  font-family: var(--font-serif);
-  color: var(--text-dim);
-  background: rgba(200,150,12,0.08);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 0;
-  letter-spacing: 0.05em;
+/* The gangsa body image fills the container width */
+.gangsa-body-img {
+  display: block;
+  width: 100%;
+  height: auto;
   pointer-events: none;
+  user-select: none;
 }
 
-.gangsa-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 5px;
-  padding: 12px 4px 8px;
-  background:
-    linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(14,8,3,0.85) 100%);
-  border-radius: var(--r-md);
-  border: 1px solid var(--border);
-  overflow-x: auto;
-}
-
-.gangsa-bar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* Each bar overlay is absolutely positioned on top of the body image */
+.gangsa-bar-overlay {
+  position: absolute;
   cursor: pointer;
   user-select: none;
-  flex-shrink: 0;
-  transition: filter 0.12s;
-}
-
-.gangsa-bar:hover { filter: brightness(1.15); }
-
-.bar-label {
-  text-align: center;
-  margin-bottom: 4px;
-}
-
-.bar-note-name {
-  display: block;
-  font-family: var(--font-serif);
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: rgba(200,150,12,0.7);
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-  text-transform: uppercase;
-}
-
-.bar-img-wrap {
-  position: relative;
-  border-radius: 4px;
-  overflow: hidden;
-  transition: box-shadow 0.12s;
-}
-
-.bar--active .bar-img-wrap {
-  box-shadow: 0 0 14px 4px rgba(255, 210, 50, 0.55);
-}
-
-.bar--mute .bar-img-wrap {
-  box-shadow: 0 0 10px 3px rgba(80, 160, 255, 0.5);
-}
-
-.bar-bg-img {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 100%;
-  width: auto;
-  object-fit: cover;
-  opacity: 0.35;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.bar-img {
-  position: relative;
-  display: block;
-  width: auto;
-  height: 175px;          /* bars shown at consistent height */
-  object-fit: contain;
-  pointer-events: none;
+  border-radius: 3px;
+  transition: filter 0.1s, transform 0.1s;
   z-index: 1;
 }
 
-/* Active golden overlay */
-.bar-glow {
+.gangsa-bar-overlay:hover {
+  filter: brightness(1.2) drop-shadow(0 0 8px rgba(255, 210, 50, 0.4));
+  transform: translateY(-2px);
+}
+
+.gangsa-bar-overlay:active {
+  transform: translateY(0);
+}
+
+/* The individual bilah image fills its overlay container */
+.gangsa-bar-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  border-radius: 3px;
+}
+
+/* Glow overlay on active/mute */
+.gangsa-bar-glow {
   position: absolute;
   inset: 0;
-  background: rgba(255, 200, 50, 0);
+  border-radius: 3px;
   pointer-events: none;
-  transition: background 0.1s;
+  transition: background 0.12s, box-shadow 0.12s;
   z-index: 2;
 }
 
-.bar--active .bar-glow {
-  background: rgba(255, 200, 50, 0.28);
+.bar--active .gangsa-bar-glow {
+  background: rgba(255, 210, 50, 0.3);
+  box-shadow:
+    0 0 18px 6px rgba(255, 210, 50, 0.5),
+    inset 0 0 12px rgba(255, 200, 50, 0.2);
 }
 
-.bar--mute .bar-glow {
-  background: rgba(80, 160, 255, 0.22);
+.bar--mute .gangsa-bar-glow {
+  background: rgba(80, 160, 255, 0.25);
+  box-shadow:
+    0 0 14px 4px rgba(80, 160, 255, 0.45),
+    inset 0 0 8px rgba(80, 160, 255, 0.15);
 }
 
-/* Mute zone — bottom 28% of each bar */
-.mute-zone {
+/* Mute zone indicator at bottom of each bar */
+.gangsa-bar-mute-zone {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 28%;
+  height: 25%;
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(30, 80, 160, 0.18) 50%,
-    rgba(30, 80, 160, 0.32) 100%
+    rgba(30, 80, 160, 0.15) 50%,
+    rgba(30, 80, 160, 0.3) 100%
   );
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 4px;
+  padding-bottom: 3px;
   opacity: 0;
   transition: opacity 0.15s;
-  z-index: 2;
+  z-index: 3;
+  border-radius: 0 0 3px 3px;
 }
 
-.gangsa-bar:hover .mute-zone { opacity: 1; }
-.bar--mute .mute-zone { opacity: 1; background: rgba(80, 160, 255, 0.35); }
+.gangsa-bar-overlay:hover .gangsa-bar-mute-zone { opacity: 1; }
+.bar--mute .gangsa-bar-mute-zone { opacity: 1; background: rgba(80, 160, 255, 0.35); }
 
-.mute-zone-label {
-  font-size: 8px;
+.gangsa-mute-icon {
+  font-size: 7px;
   color: rgba(120, 180, 255, 0.8);
-  letter-spacing: 0.05em;
   pointer-events: none;
 }
 
-/* Keyboard key badge below each bar */
-.bar-kbd {
-  margin-top: 4px;
-  font-size: 0.62rem;
+/* Note name label floating above the bar */
+.gangsa-bar-note {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-serif);
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: rgba(200, 150, 12, 0.85);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.gangsa-bar-overlay:hover .gangsa-bar-note { opacity: 1; }
+.bar--active .gangsa-bar-note { opacity: 1; color: #FFD700; }
+.bar--mute .gangsa-bar-note { opacity: 1; color: rgba(120, 180, 255, 0.9); }
+
+/* Key badge floating below the bar */
+.gangsa-bar-key {
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.55rem;
   font-weight: 800;
   font-family: var(--font-serif);
-  color: rgba(200,150,12,0.55);
-  background: rgba(200,150,12,0.08);
-  border: 1px solid rgba(200,150,12,0.2);
+  color: rgba(200, 150, 12, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(200, 150, 12, 0.2);
   border-radius: 3px;
-  padding: 1px 5px;
+  padding: 0 4px;
   line-height: 1.4;
   letter-spacing: 0.05em;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.gangsa-bar-overlay:hover .gangsa-bar-key { opacity: 1; }
+.bar--active .gangsa-bar-key { opacity: 1; border-color: rgba(255, 210, 50, 0.5); color: #FFD700; }
+.bar--mute .gangsa-bar-key { opacity: 1; border-color: rgba(80, 160, 255, 0.4); color: rgba(120, 180, 255, 0.8); }
+
+/* Keyboard guide row below the instrument */
+.gangsa-keys-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 0 2px;
+}
+
+.gangsa-key-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.gangsa-key-badge {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-family: var(--font-serif);
+  color: rgba(200, 150, 12, 0.55);
+  background: rgba(200, 150, 12, 0.06);
+  border: 1px solid rgba(200, 150, 12, 0.18);
+  border-radius: 5px;
+  padding: 4px 0;
+  letter-spacing: 0.05em;
+  cursor: default;
+  transition: all 0.12s;
+}
+
+.gangsa-key-badge.key--active {
+  background: rgba(255, 210, 50, 0.2);
+  border-color: rgba(255, 210, 50, 0.5);
+  color: #FFD700;
+  box-shadow: 0 0 8px rgba(255, 210, 50, 0.3);
+}
+
+.gangsa-key-badge.key--mute {
+  background: rgba(80, 160, 255, 0.15);
+  border-color: rgba(80, 160, 255, 0.4);
+  color: rgba(120, 180, 255, 0.9);
+  box-shadow: 0 0 6px rgba(80, 160, 255, 0.25);
+}
+
+.gangsa-key-note {
+  font-size: 0.58rem;
+  font-weight: 600;
+  font-family: var(--font-serif);
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 /* Zone legend */
@@ -876,13 +925,14 @@ html, body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 0.72rem;
   color: var(--text-dim);
 }
 
 .legend-play  { color: rgba(255, 200, 50, 0.65); }
 .legend-mute  { color: rgba(100, 160, 255, 0.65); }
+.legend-kbd   { color: var(--text-dim); }
 .legend-sep   { opacity: 0.4; }
 
 /* ── Suling horizontal panel ──────────────────────────────────────────────── */
