@@ -1,9 +1,8 @@
 <template>
   <div class="gangsa-panel">
 
-    <!-- Full gangsa image with bar overlays -->
+    <!-- Full gangsa instrument image with clickable bar zones -->
     <div class="gangsa-stage">
-      <!-- Base gangsa body image -->
       <img
         src="/assets/gangsa.png"
         alt="Gangsa Bali"
@@ -11,7 +10,7 @@
         draggable="false"
       />
 
-      <!-- Clickable bar zones positioned over each bar in the photo -->
+      <!-- Invisible clickable zones over each bar -->
       <div
         v-for="(note, i) in instrument.notes"
         :key="note.index"
@@ -21,32 +20,37 @@
           'gangsa-hit--mute': barStates[i] === 'mute',
         }"
         :style="getBarStyle(i)"
+        :title="`${note.name} · ${KEYS[i]}`"
         @mousedown="onBarDown($event, i)"
         @touchstart.prevent="onBarTouch($event, i)"
       >
-        <!-- Individual bilah image covers the bar in the photo -->
-        <img
-          :src="`/assets/gangsa/${i + 1}.png`"
-          :alt="note.name"
-          class="gangsa-bilah"
-          draggable="false"
-        />
         <!-- Glow overlay -->
         <div class="gangsa-glow" />
         <!-- Note label -->
         <span class="gangsa-note-label">{{ note.name }}</span>
         <!-- Key badge -->
         <span class="gangsa-key-label">{{ KEYS[i] }}</span>
-        <!-- Mute zone -->
-        <div class="gangsa-mute-zone" />
+      </div>
+    </div>
+
+    <!-- Keyboard guide row -->
+    <div class="gangsa-keys-row">
+      <div v-for="(note, i) in instrument.notes" :key="'k'+i" class="gangsa-key-cell"
+        :class="{
+          'gangsa-key-cell--play': barStates[i] === 'play',
+          'gangsa-key-cell--mute': barStates[i] === 'mute',
+        }"
+      >
+        <kbd>{{ KEYS[i] }}</kbd>
+        <span>{{ note.name }}</span>
       </div>
     </div>
 
     <!-- Legend -->
     <div class="gangsa-legend">
-      <span class="legend-play">&#9654; Klik = pukul</span>
+      <span class="legend-play">&#9654; Klik tengah bilah = pukul</span>
       <span class="legend-sep">&#183;</span>
-      <span class="legend-mute">&#9632; Klik bawah = mute</span>
+      <span class="legend-mute">&#9632; Klik bawah bilah = mute</span>
       <span class="legend-sep">&#183;</span>
       <span class="legend-kbd">Keyboard Q&#8211;P</span>
     </div>
@@ -61,19 +65,18 @@ const KEYS = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P']
 const KEY_TO_IDX = Object.fromEntries(KEYS.map((k, i) => [k.toLowerCase(), i]))
 const MUTE_ZONE_RATIO = 0.75
 
-// Derived from gangsa.png dimensions (3799 x 2129)
-// xStart=285  xEnd=3593  → bars span 7.50% to 94.56%
-// Each of the 10 bars occupies (3593-285)/10 / 3799 = 8.71% width
+// Derived from gangsa.png (3799 × 2129)
+// xStart=285  xEnd=3593 (from instruments.js)
 const IMG_W = 3799
 const IMG_H = 2129
 const X_START = 285
 const X_END   = 3593
 const BAR_COUNT = 10
-const BAR_SLOT  = (X_END - X_START) / BAR_COUNT  // ~330.8 px per bar
+const BAR_SLOT  = (X_END - X_START) / BAR_COUNT  // ~330.8 px
 
-// Vertical region where bars sit in the photo (in px, then converted to %)
-const BAR_TOP = 170     // top of tallest bar
-const BAR_BOTTOM = 1420 // bottom of bars
+// Vertical bar region in the photo (measured from gangsa.png)
+const BAR_TOP    = 250   // where bar tops begin
+const BAR_BOTTOM = 1380  // where bar bottoms end
 
 export default {
   props: {

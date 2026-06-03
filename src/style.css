@@ -706,7 +706,7 @@ html, body {
   padding: 0.5rem 0;
 }
 
-/* Stage: contains base image + absolute bar overlays */
+/* Container: holds the base image + absolute overlay zones */
 .gangsa-stage {
   position: relative;
   width: 100%;
@@ -714,9 +714,10 @@ html, body {
   overflow: hidden;
   border: 1px solid var(--border);
   background: #000;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
 }
 
-/* Full gangsa body image as the base layer */
+/* Full gangsa photo as the base visual */
 .gangsa-body {
   display: block;
   width: 100%;
@@ -725,134 +726,164 @@ html, body {
   user-select: none;
 }
 
-/* Each bar hit zone is absolutely positioned over the corresponding bar in the photo */
+/* Transparent clickable zone over each bar in the photo */
 .gangsa-hit {
   position: absolute;
   cursor: pointer;
   user-select: none;
   z-index: 1;
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  transition: border-color 0.12s;
 }
 
-/* The bilah image fills the hit zone and covers the bar in the background */
-.gangsa-bilah {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: none;
+.gangsa-hit:hover {
+  border-color: rgba(200, 150, 12, 0.35);
 }
 
-/* Glow overlay */
+/* Glow overlay — appears on play/mute */
 .gangsa-glow {
   position: absolute;
   inset: 0;
-  pointer-events: none;
   border-radius: 3px;
-  transition: background 0.12s, box-shadow 0.12s;
-  z-index: 2;
+  pointer-events: none;
+  transition: background 0.1s, box-shadow 0.1s;
 }
 
 .gangsa-hit--play .gangsa-glow {
   background: rgba(255, 215, 0, 0.3);
-  box-shadow: 0 0 20px 8px rgba(255, 215, 0, 0.5);
+  box-shadow:
+    0 0 24px 8px rgba(255, 215, 0, 0.45),
+    inset 0 0 16px rgba(255, 215, 0, 0.2);
 }
 
 .gangsa-hit--mute .gangsa-glow {
   background: rgba(80, 160, 255, 0.25);
-  box-shadow: 0 0 16px 6px rgba(80, 160, 255, 0.45);
+  box-shadow:
+    0 0 18px 6px rgba(80, 160, 255, 0.4),
+    inset 0 0 12px rgba(80, 160, 255, 0.15);
 }
 
-/* Note name label */
+/* Note name label inside the bar zone */
 .gangsa-note-label {
   position: absolute;
-  top: 4px;
+  top: 6px;
   left: 50%;
   transform: translateX(-50%);
   font-family: var(--font-serif);
-  font-size: 0.55rem;
+  font-size: 0.58rem;
   font-weight: 700;
-  color: rgba(200, 150, 12, 0.9);
+  color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
   text-transform: uppercase;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
   pointer-events: none;
-  z-index: 3;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
 }
 
+.gangsa-hit:hover .gangsa-note-label { opacity: 1; }
 .gangsa-hit--play .gangsa-note-label {
+  opacity: 1;
   color: #FFD700;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.7), 0 1px 4px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
 }
-
 .gangsa-hit--mute .gangsa-note-label {
+  opacity: 1;
   color: rgba(120, 180, 255, 0.95);
 }
 
-/* Key badge */
+/* Key badge inside bar zone */
 .gangsa-key-label {
   position: absolute;
-  bottom: 4px;
+  bottom: 6px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 0.55rem;
   font-weight: 800;
   font-family: var(--font-serif);
-  color: rgba(200, 150, 12, 0.6);
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(200, 150, 12, 0.25);
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 3px;
   padding: 0 4px;
   line-height: 1.4;
-  letter-spacing: 0.06em;
   pointer-events: none;
-  z-index: 3;
+  z-index: 2;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.12s;
 }
 
 .gangsa-hit:hover .gangsa-key-label { opacity: 1; }
-.gangsa-hit--play .gangsa-key-label { opacity: 1; color: #FFD700; border-color: rgba(255, 215, 0, 0.5); }
-.gangsa-hit--mute .gangsa-key-label { opacity: 1; color: rgba(120, 180, 255, 0.9); border-color: rgba(80, 160, 255, 0.4); }
-
-/* Mute zone indicator at bottom of hit zone */
-.gangsa-mute-zone {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 25%;
-  background: linear-gradient(to bottom, transparent 0%, rgba(30, 80, 160, 0.25) 100%);
-  opacity: 0;
-  transition: opacity 0.15s;
-  pointer-events: none;
-  z-index: 2;
+.gangsa-hit--play .gangsa-key-label {
+  opacity: 1;
+  color: #FFD700;
+  border-color: rgba(255, 215, 0, 0.5);
+}
+.gangsa-hit--mute .gangsa-key-label {
+  opacity: 1;
+  color: rgba(120, 180, 255, 0.9);
+  border-color: rgba(80, 160, 255, 0.4);
 }
 
-.gangsa-hit:hover .gangsa-mute-zone { opacity: 0.6; }
-.gangsa-hit--mute .gangsa-mute-zone { opacity: 1; background: rgba(80, 160, 255, 0.3); }
-
-/* Hover subtle lift */
-.gangsa-hit:hover .gangsa-bilah {
-  filter: brightness(1.12);
+/* Keyboard guide row below instrument */
+.gangsa-keys-row {
+  display: flex;
+  gap: 3px;
+  margin-top: 8px;
 }
 
-.gangsa-hit--play .gangsa-bilah {
-  filter: brightness(1.2);
+.gangsa-key-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0;
+  border-radius: 4px;
+  background: rgba(200, 150, 12, 0.04);
+  border: 1px solid rgba(200, 150, 12, 0.12);
+  transition: all 0.12s;
 }
 
-.gangsa-hit--mute .gangsa-bilah {
-  filter: brightness(0.85) saturate(0.7);
+.gangsa-key-cell kbd {
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-family: var(--font-serif);
+  color: rgba(200, 150, 12, 0.55);
+  letter-spacing: 0.05em;
 }
+
+.gangsa-key-cell span {
+  font-size: 0.5rem;
+  font-weight: 600;
+  font-family: var(--font-serif);
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.gangsa-key-cell--play {
+  background: rgba(255, 210, 50, 0.15);
+  border-color: rgba(255, 210, 50, 0.4);
+  box-shadow: 0 0 6px rgba(255, 210, 50, 0.25);
+}
+.gangsa-key-cell--play kbd { color: #FFD700; }
+
+.gangsa-key-cell--mute {
+  background: rgba(80, 160, 255, 0.1);
+  border-color: rgba(80, 160, 255, 0.35);
+}
+.gangsa-key-cell--mute kbd { color: rgba(120, 180, 255, 0.9); }
 
 /* Legend */
 .gangsa-legend {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 8px;
   font-size: 0.72rem;
   color: var(--text-dim);
 }

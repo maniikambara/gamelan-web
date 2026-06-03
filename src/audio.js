@@ -130,8 +130,7 @@ export class AudioEngine {
     this.activeSources = {}
 
     // Recording state
-    this.mediaRecorder  = null
-    this.recordedChunks = []
+    this.isRecording = false
     this.recordStartTime = 0
     this.recordingEvents = []
   }
@@ -257,7 +256,7 @@ export class AudioEngine {
     }
 
     // Record event for later export
-    if (this.mediaRecorder?.state === 'recording') {
+    if (this.isRecording) {
       this.recordingEvents.push({
         timestamp_ms: Date.now() - this.recordStartTime,
         instrument,
@@ -360,17 +359,9 @@ export class AudioEngine {
   startRecording() {
     this.ensureContext()
     this.resume()
-    this.recordedChunks = []
     this.recordingEvents = []
     this.recordStartTime = Date.now()
-
-    // MediaRecorder captures the AudioContext destination stream for timing
-    const dest = this.ctx.createMediaStreamAudioDestination()
-    this.mediaRecorder = new MediaRecorder(dest.stream)
-    this.mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) this.recordedChunks.push(e.data)
-    }
-    this.mediaRecorder.start(100)
+    this.isRecording = true
   }
 
   /**
@@ -381,54 +372,51 @@ export class AudioEngine {
    * @returns {Promise<{url: string, blob: Blob}>}
    */
   async stopRecording() {
-    return new Promise((resolve) => {
-      this.mediaRecorder.onstop = async () => {
-        try {
-          const sr      = this.ctx.sampleRate
-          const events  = this.recordingEvents
-          if (events.length === 0) {
-            resolve({ url: '', blob: null }); return
+    this.isRecording = false
+
+    try {
+      const sr     = this.ctx.sampleRate
+      const events = this.recordingEvents
+      if (!events || events.length === 0) {
+        return { url: '', blob: null }
+      }
+
+      // Total duration: last event offset + generous tail
+      const maxOffset  = Math.max(...events.map(e => e.timestamp_ms)) / 1000
+      const bufferSecs = maxOffset + 5.0
+      const frameCount = Math.ceil(bufferSecs * sr)
+      const mix        = new Float32Array(frameCount)
+
+      for (const ev of events) {
+        const startFrame = Math.floor(ev.timestamp_ms / 1000 * sr)
+
+        if (ev.sampleKey && this.sampleBuffers[ev.sampleKey]) {
+          // Use the pre-loaded AudioBuffer
+          const buf = this.sampleBuffers[ev.sampleKey]
+          const eventData = buf.getChannelData(0)
+          const gain = ev.params?.gain ?? 0.8
+          for (let i = 0; i < eventData.length; i++) {
+            const dest = startFrame + i
+            if (dest < frameCount) mix[dest] += eventData[i] * gain
           }
-
-          // Total duration: last event offset + max note duration
-          const maxOffset  = Math.max(...events.map(e => e.timestamp_ms)) / 1000
-          const bufferSecs = maxOffset + 5.0   // generous tail
-          const frameCount = Math.ceil(bufferSecs * sr)
-          const mix        = new Float32Array(frameCount)
-
-          for (const ev of events) {
-            const startFrame = Math.floor(ev.timestamp_ms / 1000 * sr)
-            let eventData
-
-            if (ev.sampleKey && this.sampleBuffers[ev.sampleKey]) {
-              // Use the pre-loaded AudioBuffer
-              const buf = this.sampleBuffers[ev.sampleKey]
-              eventData = buf.getChannelData(0)
-              const gain = ev.params?.gain ?? 0.8
-              for (let i = 0; i < eventData.length; i++) {
-                const dest = startFrame + i
-                if (dest < frameCount) mix[dest] += eventData[i] * gain
-              }
-            } else {
-              // Procedural approximation for the recording mix
-              this._mixProcedural(mix, startFrame, ev, sr)
-            }
-          }
-
-          // Normalise to prevent clipping
-          let peak = 0
-          for (let i = 0; i < frameCount; i++) peak = Math.max(peak, Math.abs(mix[i]))
-          if (peak > 1) for (let i = 0; i < frameCount; i++) mix[i] /= peak
-
-          const wavBlob = this._float32ToWav(mix, sr)
-          resolve({ url: URL.createObjectURL(wavBlob), blob: wavBlob })
-        } catch (err) {
-          console.error('[AudioEngine] Recording export error:', err)
-          resolve({ url: '', blob: null })
+        } else {
+          // Procedural approximation for the recording mix
+          this._mixProcedural(mix, startFrame, ev, sr)
         }
       }
-      this.mediaRecorder.stop()
-    })
+
+      // Normalise to prevent clipping
+      let peak = 0
+      for (let i = 0; i < frameCount; i++) peak = Math.max(peak, Math.abs(mix[i]))
+      if (peak > 1) for (let i = 0; i < frameCount; i++) mix[i] /= peak
+
+      const wavBlob = this._float32ToWav(mix, sr)
+      const url = URL.createObjectURL(wavBlob)
+      return { url, blob: wavBlob }
+    } catch (err) {
+      console.error('[AudioEngine] Recording export error:', err)
+      return { url: '', blob: null }
+    }
   }
 
   /** Procedural note mixing for the recording export. */
