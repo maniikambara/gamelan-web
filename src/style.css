@@ -706,83 +706,134 @@ html, body {
   padding: 0.5rem 0;
 }
 
-/* Container for the full instrument */
-.gangsa-instrument {
+/* Stage: gangsa body as dim background, bars on top */
+.gangsa-stage {
   position: relative;
   width: 100%;
   border-radius: var(--r-lg);
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.4);
   border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.5);
   box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(200, 150, 12, 0.08);
+    0 4px 28px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(200, 150, 12, 0.06);
 }
 
-/* The gangsa body image fills the container width */
-.gangsa-body-img {
+/* Gangsa body sits behind everything */
+.gangsa-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 60%;
+  opacity: 0.3;
+  filter: blur(1px) brightness(0.8);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* Bars row on top of the background */
+.gangsa-bars-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  padding: 24px 12px 16px;
+}
+
+/* Individual bar column */
+.g-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  flex: 1;
+  min-width: 0;
+  transition: transform 0.1s;
+}
+
+.g-bar:hover { transform: translateY(-3px); }
+.g-bar:active { transform: translateY(0); }
+
+/* Note name label */
+.g-bar-name {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(200, 150, 12, 0.75);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  transition: color 0.12s;
+}
+
+.g-bar--hit .g-bar-name  { color: #FFD700; text-shadow: 0 0 8px rgba(255, 210, 50, 0.6); }
+.g-bar--mute .g-bar-name { color: rgba(120, 180, 255, 0.9); }
+
+/* Frame around the bar image */
+.g-bar-frame {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: box-shadow 0.12s, filter 0.12s;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.g-bar:hover .g-bar-frame {
+  filter: brightness(1.1);
+  box-shadow: 0 2px 12px rgba(200, 150, 12, 0.2);
+}
+
+.g-bar--hit .g-bar-frame {
+  box-shadow:
+    0 0 16px 5px rgba(255, 210, 50, 0.5),
+    0 0 4px 1px rgba(255, 200, 50, 0.8);
+  filter: brightness(1.2);
+}
+
+.g-bar--mute .g-bar-frame {
+  box-shadow:
+    0 0 12px 4px rgba(80, 160, 255, 0.45),
+    0 0 3px 1px rgba(80, 160, 255, 0.7);
+  filter: brightness(0.9);
+}
+
+/* The actual bar image — height varies per bar (nth-child) */
+.g-bar-img {
   display: block;
   width: 100%;
   height: auto;
   pointer-events: none;
-  user-select: none;
 }
 
-/* Each bar overlay is absolutely positioned on top of the body image */
-.gangsa-bar-overlay {
+/* Active glow overlay */
+.g-bar-glow {
   position: absolute;
-  cursor: pointer;
-  user-select: none;
-  border-radius: 3px;
-  transition: filter 0.1s, transform 0.1s;
+  inset: 0;
+  border-radius: 4px;
+  pointer-events: none;
+  transition: background 0.12s;
   z-index: 1;
 }
 
-.gangsa-bar-overlay:hover {
-  filter: brightness(1.2) drop-shadow(0 0 8px rgba(255, 210, 50, 0.4));
-  transform: translateY(-2px);
+.g-bar--hit .g-bar-glow {
+  background: rgba(255, 210, 50, 0.25);
 }
 
-.gangsa-bar-overlay:active {
-  transform: translateY(0);
+.g-bar--mute .g-bar-glow {
+  background: rgba(80, 160, 255, 0.2);
 }
 
-/* The individual bilah image fills its overlay container */
-.gangsa-bar-img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: none;
-  border-radius: 3px;
-}
-
-/* Glow overlay on active/mute */
-.gangsa-bar-glow {
-  position: absolute;
-  inset: 0;
-  border-radius: 3px;
-  pointer-events: none;
-  transition: background 0.12s, box-shadow 0.12s;
-  z-index: 2;
-}
-
-.bar--active .gangsa-bar-glow {
-  background: rgba(255, 210, 50, 0.3);
-  box-shadow:
-    0 0 18px 6px rgba(255, 210, 50, 0.5),
-    inset 0 0 12px rgba(255, 200, 50, 0.2);
-}
-
-.bar--mute .gangsa-bar-glow {
-  background: rgba(80, 160, 255, 0.25);
-  box-shadow:
-    0 0 14px 4px rgba(80, 160, 255, 0.45),
-    inset 0 0 8px rgba(80, 160, 255, 0.15);
-}
-
-/* Mute zone indicator at bottom of each bar */
-.gangsa-bar-mute-zone {
+/* Mute zone at bottom 25% */
+.g-bar-mzone {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -791,8 +842,8 @@ html, body {
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(30, 80, 160, 0.15) 50%,
-    rgba(30, 80, 160, 0.3) 100%
+    rgba(30, 80, 160, 0.12) 50%,
+    rgba(30, 80, 160, 0.28) 100%
   );
   display: flex;
   align-items: flex-end;
@@ -800,124 +851,46 @@ html, body {
   padding-bottom: 3px;
   opacity: 0;
   transition: opacity 0.15s;
-  z-index: 3;
-  border-radius: 0 0 3px 3px;
+  z-index: 2;
+  border-radius: 0 0 4px 4px;
 }
 
-.gangsa-bar-overlay:hover .gangsa-bar-mute-zone { opacity: 1; }
-.bar--mute .gangsa-bar-mute-zone { opacity: 1; background: rgba(80, 160, 255, 0.35); }
+.g-bar:hover .g-bar-mzone { opacity: 1; }
+.g-bar--mute .g-bar-mzone { opacity: 1; background: rgba(80, 160, 255, 0.32); }
 
-.gangsa-mute-icon {
+.g-bar-mzone span {
   font-size: 7px;
   color: rgba(120, 180, 255, 0.8);
   pointer-events: none;
 }
 
-/* Note name label floating above the bar */
-.gangsa-bar-note {
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-serif);
-  font-size: 0.55rem;
-  font-weight: 700;
-  color: rgba(200, 150, 12, 0.85);
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
-  pointer-events: none;
-  z-index: 4;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.gangsa-bar-overlay:hover .gangsa-bar-note { opacity: 1; }
-.bar--active .gangsa-bar-note { opacity: 1; color: #FFD700; }
-.bar--mute .gangsa-bar-note { opacity: 1; color: rgba(120, 180, 255, 0.9); }
-
-/* Key badge floating below the bar */
-.gangsa-bar-key {
-  position: absolute;
-  bottom: -16px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.55rem;
+/* Keyboard badge */
+.g-bar-kbd {
+  margin-top: 5px;
+  font-size: 0.6rem;
   font-weight: 800;
   font-family: var(--font-serif);
   color: rgba(200, 150, 12, 0.5);
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(200, 150, 12, 0.2);
-  border-radius: 3px;
-  padding: 0 4px;
-  line-height: 1.4;
-  letter-spacing: 0.05em;
-  pointer-events: none;
-  z-index: 4;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.gangsa-bar-overlay:hover .gangsa-bar-key { opacity: 1; }
-.bar--active .gangsa-bar-key { opacity: 1; border-color: rgba(255, 210, 50, 0.5); color: #FFD700; }
-.bar--mute .gangsa-bar-key { opacity: 1; border-color: rgba(80, 160, 255, 0.4); color: rgba(120, 180, 255, 0.8); }
-
-/* Keyboard guide row below the instrument */
-.gangsa-keys-row {
-  display: flex;
-  gap: 4px;
-  margin-top: 10px;
-  padding: 0 2px;
-}
-
-.gangsa-key-cell {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.gangsa-key-badge {
-  display: block;
-  width: 100%;
-  text-align: center;
-  font-size: 0.7rem;
-  font-weight: 800;
-  font-family: var(--font-serif);
-  color: rgba(200, 150, 12, 0.55);
   background: rgba(200, 150, 12, 0.06);
   border: 1px solid rgba(200, 150, 12, 0.18);
-  border-radius: 5px;
-  padding: 4px 0;
+  border-radius: 4px;
+  padding: 1px 6px;
+  line-height: 1.4;
   letter-spacing: 0.05em;
-  cursor: default;
   transition: all 0.12s;
 }
 
-.gangsa-key-badge.key--active {
-  background: rgba(255, 210, 50, 0.2);
-  border-color: rgba(255, 210, 50, 0.5);
+.g-bar--hit .g-bar-kbd {
   color: #FFD700;
-  box-shadow: 0 0 8px rgba(255, 210, 50, 0.3);
+  background: rgba(255, 210, 50, 0.15);
+  border-color: rgba(255, 210, 50, 0.4);
+  box-shadow: 0 0 6px rgba(255, 210, 50, 0.25);
 }
 
-.gangsa-key-badge.key--mute {
-  background: rgba(80, 160, 255, 0.15);
-  border-color: rgba(80, 160, 255, 0.4);
-  color: rgba(120, 180, 255, 0.9);
-  box-shadow: 0 0 6px rgba(80, 160, 255, 0.25);
-}
-
-.gangsa-key-note {
-  font-size: 0.58rem;
-  font-weight: 600;
-  font-family: var(--font-serif);
-  color: var(--text-dim);
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+.g-bar--mute .g-bar-kbd {
+  color: rgba(120, 180, 255, 0.85);
+  background: rgba(80, 160, 255, 0.1);
+  border-color: rgba(80, 160, 255, 0.35);
 }
 
 /* Zone legend */
