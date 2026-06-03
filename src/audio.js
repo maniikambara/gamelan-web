@@ -29,6 +29,7 @@ const _fallback = {
     master.gain.setValueAtTime(params.gain || 0.8, now)
     master.gain.setTargetAtTime(0, now + 0.05, (dur - 0.05) / 4)
     master.connect(ctx.destination)
+    const oscs = []
 
     ratios.forEach((r, i) => {
       const osc = ctx.createOscillator()
@@ -38,6 +39,7 @@ const _fallback = {
       g.gain.value = amps[i]
       osc.connect(g); g.connect(master)
       osc.start(now); osc.stop(now + dur)
+      oscs.push(osc)
 
       // Ombak detuned copy for the first 3 partials
       if (i < 3) {
@@ -48,8 +50,10 @@ const _fallback = {
         g2.gain.value = amps[i] * 0.45
         osc2.connect(g2); g2.connect(master)
         osc2.start(now); osc2.stop(now + dur)
+        oscs.push(osc2)
       }
     })
+    return { gainNode: master, oscillators: oscs }
   },
 
   kendang(ctx, freq, params, noteIndex) {
@@ -79,6 +83,7 @@ const _fallback = {
 
     osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination)
     osc.start(now); osc.stop(now + dur)
+    return { gainNode: gain, oscillators: [osc] }
   },
 
   suling(ctx, freq, params) {
@@ -91,6 +96,7 @@ const _fallback = {
     master.gain.linearRampToValueAtTime(params.gain || 0.7, now + attackSec)
     master.gain.setTargetAtTime(0, now + dur * 0.8, dur * 0.15)
     master.connect(ctx.destination)
+    const oscs = []
 
     // Fundamental + 2nd harmonic
     ;[1.0, 2.0].forEach((r, i) => {
@@ -101,7 +107,9 @@ const _fallback = {
       g.gain.value = i === 0 ? 1.0 : 0.22
       osc.connect(g); g.connect(master)
       osc.start(now); osc.stop(now + dur)
+      oscs.push(osc)
     })
+    return { gainNode: master, oscillators: oscs }
   },
 }
 
@@ -229,7 +237,23 @@ export class AudioEngine {
         }
       }
     } else {
-      this._procedural(instrument, noteIndex, freq, params)
+      const result = this._procedural(instrument, noteIndex, freq, params)
+      if (result) {
+        // Store procedural nodes for muting
+        this.activeSources[key] = {
+          gainNode: result.gainNode,
+          oscillators: result.oscillators,
+        }
+        // Auto-clean when oscillators end
+        const firstOsc = result.oscillators[0]
+        if (firstOsc) {
+          firstOsc.onended = () => {
+            if (this.activeSources[key]?.gainNode === result.gainNode) {
+              delete this.activeSources[key]
+            }
+          }
+        }
+      }
     }
 
     // Record event for later export
@@ -249,9 +273,9 @@ export class AudioEngine {
   }
 
   /**
-   * Mute (damp) a note — stops the active AudioBufferSource with a quick 30ms
-   * fade so it doesn't click.  No-op if the note is not currently playing or
-   * is using procedural synthesis.
+   * Mute (damp) a note — stops the active sound source with a quick 30ms
+   * fade so it doesn't click.  Works for both sample-based playback and
+   * procedural synthesis.  No-op if the note is not currently playing.
    *
    * @param {string} instrument
    * @param {string} noteName
@@ -261,11 +285,20 @@ export class AudioEngine {
     const active = this.activeSources[key]
     if (!active) return
 
-    const { gainNode, source } = active
+    const { gainNode, source, oscillators } = active
     // 30ms exponential fade to silence, then hard stop
     gainNode.gain.setTargetAtTime(0, this.ctx.currentTime, 0.01)
     setTimeout(() => {
-      try { source.stop() } catch (_) {}
+      // Stop sample source if present
+      if (source) {
+        try { source.stop() } catch (_) {}
+      }
+      // Stop procedural oscillators if present
+      if (oscillators) {
+        for (const osc of oscillators) {
+          try { osc.stop() } catch (_) {}
+        }
+      }
     }, 60)
     delete this.activeSources[key]
   }
@@ -283,20 +316,18 @@ export class AudioEngine {
     return { source: src, gainNode: gain }
   }
 
-  /** Procedural synthesis fallback using Web Audio API oscillators. */
+  /** Procedural synthesis fallback using Web Audio API oscillators.
+   *  Returns { gainNode, oscillators } for muting support. */
   _procedural(instrument, noteIndex, freq, params) {
     switch (instrument) {
       case 'gangsa':
-        _fallback.gangsa(this.ctx, freq, params)
-        break
+        return _fallback.gangsa(this.ctx, freq, params)
       case 'kendang':
-        _fallback.kendang(this.ctx, freq, params, noteIndex)
-        break
+        return _fallback.kendang(this.ctx, freq, params, noteIndex)
       case 'suling':
-        _fallback.suling(this.ctx, freq, params)
-        break
+        return _fallback.suling(this.ctx, freq, params)
       default:
-        _fallback.gangsa(this.ctx, freq, params)
+        return _fallback.gangsa(this.ctx, freq, params)
     }
   }
 

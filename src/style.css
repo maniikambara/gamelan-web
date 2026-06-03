@@ -783,12 +783,27 @@ html, body {
   box-shadow: 0 0 10px 3px rgba(80, 160, 255, 0.5);
 }
 
+.bar-bg-img {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100%;
+  width: auto;
+  object-fit: cover;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .bar-img {
+  position: relative;
   display: block;
   width: auto;
   height: 175px;          /* bars shown at consistent height */
   object-fit: contain;
   pointer-events: none;
+  z-index: 1;
 }
 
 /* Active golden overlay */
@@ -798,6 +813,7 @@ html, body {
   background: rgba(255, 200, 50, 0);
   pointer-events: none;
   transition: background 0.1s;
+  z-index: 2;
 }
 
 .bar--active .bar-glow {
@@ -827,6 +843,7 @@ html, body {
   padding-bottom: 4px;
   opacity: 0;
   transition: opacity 0.15s;
+  z-index: 2;
 }
 
 .gangsa-bar:hover .mute-zone { opacity: 1; }

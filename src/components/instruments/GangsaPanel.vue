@@ -25,8 +25,14 @@
           <span class="bar-note-name">{{ note.name }}</span>
         </div>
 
-        <!-- Bar image (fills available height) -->
+        <!-- Bar image (fills available height) with gangsa body behind -->
         <div class="bar-img-wrap">
+          <img
+            src="/assets/gangsa.png"
+            alt=""
+            class="bar-bg-img"
+            draggable="false"
+          />
           <img
             :src="`/assets/gangsa/${i + 1}.png`"
             :alt="note.name"
