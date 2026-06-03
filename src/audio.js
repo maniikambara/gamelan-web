@@ -1,101 +1,136 @@
 /**
- * audio.js - Frontend Gamelan Synthesizer
- * INSTANT synthesis using Web Audio API - NO SERVER DELAY
+ * audio.js — Gamelan Bali Synthesizer · Audio Engine
+ *
+ * Arsitektur dua lapis:
+ *   1. Sample layer   — pre-load semua WAV dari backend saat app dimuat.
+ *                       Playback via AudioBufferSourceNode (zero latency).
+ *   2. Procedural layer — fallback Web Audio API oscillator jika sampel
+ *                         belum tersedia (upload atau backend belum online).
+ *
+ * Public API:
+ *   await engine.loadSamples(onProgress)   — fetch + decode semua sampel
+ *   engine.hasSample(instrument, noteName) — true jika sampel sudah loaded
+ *   engine.playNote(...)                   — play dengan layer yang tersedia
+ *   engine.startRecording()
+ *   await engine.stopRecording()           → { url, blob }
  */
 
 const API_BASE = '/api'
 
-// Simple synthesizer functions for each instrument
-const synth = {
-  gangsa: (ctx, freq, params, duration = 0.6) => {
+// ─── Procedural fallback synths (Web Audio API) ──────────────────────────────
+
+const _fallback = {
+  gangsa(ctx, freq, params) {
     const now = ctx.currentTime
-    const osc = ctx.createOscillator()
-    const filter = ctx.createBiquadFilter()
-    const gain = ctx.createGain()
-    
-    osc.type = 'sine'
-    osc.frequency.value = freq
-    filter.type = 'lowpass'
-    filter.frequency.value = freq * 2 + (params.resonance || 0.5) * 2000
-    filter.Q.value = 5
-    
-    gain.gain.setValueAtTime(params.gain || 0.8, now)
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration)
-    
-    osc.connect(filter)
-    filter.connect(gain)
-    gain.connect(ctx.destination)
-    
-    osc.start(now)
-    osc.stop(now + duration)
+    const ratios = [1.0, 2.756, 5.404, 8.933]
+    const amps   = [1.0, 0.55,  0.28,  0.14]
+    const dur    = (params.release_ms || 2000) / 1000 + 1.0
+    const master = ctx.createGain()
+    master.gain.setValueAtTime(params.gain || 0.8, now)
+    master.gain.setTargetAtTime(0, now + 0.05, (dur - 0.05) / 4)
+    master.connect(ctx.destination)
+
+    ratios.forEach((r, i) => {
+      const osc = ctx.createOscillator()
+      const g   = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = freq * r
+      g.gain.value = amps[i]
+      osc.connect(g); g.connect(master)
+      osc.start(now); osc.stop(now + dur)
+
+      // Ombak detuned copy for the first 3 partials
+      if (i < 3) {
+        const osc2 = ctx.createOscillator()
+        const g2   = ctx.createGain()
+        osc2.type = 'sine'
+        osc2.frequency.value = freq * r + (params.ombak || 6)
+        g2.gain.value = amps[i] * 0.45
+        osc2.connect(g2); g2.connect(master)
+        osc2.start(now); osc2.stop(now + dur)
+      }
+    })
   },
 
-  kendang: (ctx, freq, params, duration = 0.15) => {
-    const now = ctx.currentTime
-    const osc = ctx.createOscillator()
+  kendang(ctx, freq, params, noteIndex) {
+    const now    = ctx.currentTime
+    const isTung = noteIndex % 2 === 0
+    const dur    = isTung ? 0.5 : 0.15
+    const osc    = ctx.createOscillator()
     const filter = ctx.createBiquadFilter()
-    const gain = ctx.createGain()
-    
+    const gain   = ctx.createGain()
+
     osc.type = 'sine'
     osc.frequency.setValueAtTime(freq, now)
-    osc.frequency.exponentialRampToValueAtTime(freq * 0.5, now + 0.05)
-    
-    filter.type = 'highpass'
-    filter.frequency.value = freq * 0.8
-    filter.Q.value = (params.resonance || 0.4) * 10
-    
+    osc.frequency.exponentialRampToValueAtTime(freq * (isTung ? 0.7 : 0.5), now + dur * 0.8)
+
+    if (isTung) {
+      filter.type = 'lowpass'
+      filter.frequency.value = freq * 3
+      filter.Q.value = 2
+    } else {
+      filter.type = 'highpass'
+      filter.frequency.value = freq * 1.2
+      filter.Q.value = (params.resonance || 0.4) * 8
+    }
+
     gain.gain.setValueAtTime(params.gain || 0.8, now)
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration)
-    
-    osc.connect(filter)
-    filter.connect(gain)
-    gain.connect(ctx.destination)
-    
-    osc.start(now)
-    osc.stop(now + duration)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + dur)
+
+    osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination)
+    osc.start(now); osc.stop(now + dur)
   },
 
-  suling: (ctx, freq, params, duration = 0.5) => {
+  suling(ctx, freq, params) {
     const now = ctx.currentTime
-    const osc = ctx.createOscillator()
-    const filter = ctx.createBiquadFilter()
-    const gain = ctx.createGain()
-    
-    // Flute-like: sine with slight formant filter
-    osc.type = 'sine'
-    osc.frequency.value = freq
-    
-    filter.type = 'peaking'
-    filter.frequency.value = freq * 1.2
-    filter.gain.value = 5
-    filter.Q.value = 2
-    
-    gain.gain.setValueAtTime(0, now)
-    gain.gain.linearRampToValueAtTime(params.gain || 0.7, now + 0.08) // breath attack
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration)
-    
-    osc.connect(filter)
-    filter.connect(gain)
-    gain.connect(ctx.destination)
-    
-    osc.start(now)
-    osc.stop(now + duration)
-  }
+    const dur = (params.release_ms || 600) / 1000 + 0.5
+
+    const master = ctx.createGain()
+    master.gain.setValueAtTime(0, now)
+    const attackSec = (params.attack_ms || 90) / 1000
+    master.gain.linearRampToValueAtTime(params.gain || 0.7, now + attackSec)
+    master.gain.setTargetAtTime(0, now + dur * 0.8, dur * 0.15)
+    master.connect(ctx.destination)
+
+    // Fundamental + 2nd harmonic
+    ;[1.0, 2.0].forEach((r, i) => {
+      const osc = ctx.createOscillator()
+      const g   = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = freq * r
+      g.gain.value = i === 0 ? 1.0 : 0.22
+      osc.connect(g); g.connect(master)
+      osc.start(now); osc.stop(now + dur)
+    })
+  },
 }
+
+// ─── AudioEngine class ────────────────────────────────────────────────────────
 
 export class AudioEngine {
   constructor() {
+    /** @type {AudioContext|null} */
     this.ctx = null
-    this.mediaRecorder = null
+
+    /** Pre-loaded sample buffers: key = "instrument/noteName" */
+    this.sampleBuffers = {}
+
+    /** true once loadSamples() completes */
+    this.samplesLoaded = false
+
+    // Recording state
+    this.mediaRecorder  = null
     this.recordedChunks = []
     this.recordStartTime = 0
     this.recordingEvents = []
-    this.synthCache = {} // Cache synthesized notes
   }
 
+  // ─── Context management ───────────────────────────────────────────────────
+
   ensureContext() {
-    if (this.ctx) return
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 })
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 })
+    }
   }
 
   resume() {
@@ -103,70 +138,159 @@ export class AudioEngine {
     if (this.ctx.state === 'suspended') this.ctx.resume()
   }
 
-  /**
-   * INSTANT client-side synthesis - NO API DELAY
-   */
-  async synthNote(instrument, noteIndex, noteName, freq, params) {
-    try {
-      this.ensureContext()
-      
-      // Use appropriate synth engine for instrument
-      const synthFn = synth[instrument] || synth.gangsa
-      const duration = instrument === 'kendang' ? 0.15 : 0.6
-      
-      // Synthesize instantly in browser
-      synthFn(this.ctx, freq, params, duration)
-      
-      // Record if recording
-      if (this.mediaRecorder?.state === 'recording') {
-        this.recordingEvents.push({
-          timestamp_ms: Date.now() - this.recordStartTime,
-          instrument,
-          noteName,
-          freq,
-          params: { ...params }
-        })
-      }
-      
-      return true
-    } catch (error) {
-      console.error('Synthesis error:', error)
-    }
-  }
+  // ─── Sample pre-loading ───────────────────────────────────────────────────
 
   /**
-   * Decode base64 WAV and play via Web Audio (for uploaded samples)
+   * Fetch the list of available samples from the backend, then decode each
+   * WAV file into an AudioBuffer.  Calls onProgress(loaded, total) after
+   * each successful decode.
+   *
+   * @param {function(number, number):void} [onProgress]
+   * @returns {Promise<number>} Number of samples successfully loaded
    */
-  async _playAudioData(audio_b64) {
+  async loadSamples(onProgress = null) {
     this.ensureContext()
-    try {
-      const binary = atob(audio_b64)
-      const bytes = new Uint8Array(binary.length)
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i)
-      }
 
-      const audioBuffer = await this.ctx.decodeAudioData(bytes.buffer)
-      const source = this.ctx.createBufferSource()
-      source.buffer = audioBuffer
-      source.connect(this.ctx.destination)
-      source.start(0)
-    } catch (error) {
-      console.error('Audio playback error:', error)
+    let listData = null
+    try {
+      const res = await fetch(`${API_BASE}/samples`)
+      if (!res.ok) return 0
+      listData = await res.json()
+    } catch {
+      return 0
     }
+
+    const keys = Object.keys(listData?.loaded ?? {})
+    if (keys.length === 0) return 0
+
+    let loaded = 0
+    for (const key of keys) {
+      const [inst, note] = key.split('/')
+      try {
+        const res = await fetch(
+          `${API_BASE}/samples/${encodeURIComponent(inst)}/${encodeURIComponent(note)}`
+        )
+        if (!res.ok) continue
+        const arrayBuf = await res.arrayBuffer()
+        const audioBuf = await this.ctx.decodeAudioData(arrayBuf)
+        this.sampleBuffers[key] = audioBuf
+        loaded++
+        if (onProgress) onProgress(loaded, keys.length)
+      } catch (err) {
+        console.warn(`[AudioEngine] Could not load sample "${key}":`, err)
+      }
+    }
+
+    this.samplesLoaded = true
+    console.info(`[AudioEngine] Loaded ${loaded}/${keys.length} samples`)
+    return loaded
   }
 
+  /** Check whether a pre-loaded buffer exists for this instrument+note. */
+  hasSample(instrument, noteName) {
+    return `${instrument}/${noteName}` in this.sampleBuffers
+  }
+
+  // ─── Playback ─────────────────────────────────────────────────────────────
+
   /**
-   * Play a note - calls backend synthesis
+   * Play a single note.  Returns 'sample' or 'synth' indicating which
+   * layer was used (for the badge in the header).
+   *
+   * @param {string} instrument
+   * @param {number} noteIndex
+   * @param {string} noteName
+   * @param {number} freq
+   * @param {object} params
+   * @returns {string} 'sample' | 'synth'
    */
   playNote(instrument, noteIndex, noteName, freq, params) {
     this.resume()
-    return this.synthNote(instrument, noteIndex, noteName, freq, params)
+    return this._play(instrument, noteIndex, noteName, freq, params)
   }
 
-  /**
-   * Start recording session
-   */
+  _play(instrument, noteIndex, noteName, freq, params) {
+    const key = `${instrument}/${noteName}`
+    const hasBuf = key in this.sampleBuffers
+    const mode   = hasBuf ? 'sample' : 'synth'
+
+    if (hasBuf) {
+      this._playBuffer(this.sampleBuffers[key], params.gain ?? 0.8)
+    } else {
+      this._procedural(instrument, noteIndex, freq, params)
+    }
+
+    // Record event for later export
+    if (this.mediaRecorder?.state === 'recording') {
+      this.recordingEvents.push({
+        timestamp_ms: Date.now() - this.recordStartTime,
+        instrument,
+        noteName,
+        noteIndex,
+        freq,
+        params: { ...params },
+        sampleKey: hasBuf ? key : null,
+      })
+    }
+
+    return mode
+  }
+
+  /** Play an AudioBuffer through the context destination with gain scaling. */
+  _playBuffer(buffer, gainValue = 0.8) {
+    const src  = this.ctx.createBufferSource()
+    const gain = this.ctx.createGain()
+    src.buffer   = buffer
+    gain.gain.value = gainValue
+    src.connect(gain)
+    gain.connect(this.ctx.destination)
+    src.start(0)
+    return src
+  }
+
+  /** Procedural synthesis fallback using Web Audio API oscillators. */
+  _procedural(instrument, noteIndex, freq, params) {
+    switch (instrument) {
+      case 'gangsa':
+        _fallback.gangsa(this.ctx, freq, params)
+        break
+      case 'kendang':
+        _fallback.kendang(this.ctx, freq, params, noteIndex)
+        break
+      case 'suling':
+        _fallback.suling(this.ctx, freq, params)
+        break
+      default:
+        _fallback.gangsa(this.ctx, freq, params)
+    }
+  }
+
+  // ─── Sample upload ────────────────────────────────────────────────────────
+
+  async uploadSample(instrument, noteName, file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(
+      `${API_BASE}/samples/${encodeURIComponent(instrument)}/${encodeURIComponent(noteName)}`,
+      { method: 'POST', body: formData }
+    )
+    if (!res.ok) throw new Error('Upload failed')
+
+    // Immediately decode and cache the uploaded sample for instant playback
+    const arrayBuf = await file.arrayBuffer()
+    try {
+      this.ensureContext()
+      const audioBuf = await this.ctx.decodeAudioData(arrayBuf.slice(0))
+      this.sampleBuffers[`${instrument}/${noteName}`] = audioBuf
+    } catch {
+      /* Decode failure is non-fatal; sample still uploaded to backend */
+    }
+
+    return await res.json()
+  }
+
+  // ─── Recording ────────────────────────────────────────────────────────────
+
   startRecording() {
     this.ensureContext()
     this.resume()
@@ -174,189 +298,157 @@ export class AudioEngine {
     this.recordingEvents = []
     this.recordStartTime = Date.now()
 
-    // Create a silent media stream for MediaRecorder to track timing
+    // MediaRecorder captures the AudioContext destination stream for timing
     const dest = this.ctx.createMediaStreamAudioDestination()
     this.mediaRecorder = new MediaRecorder(dest.stream)
     this.mediaRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) this.recordedChunks.push(e.data)
     }
-    this.mediaRecorder.start()
+    this.mediaRecorder.start(100)
   }
 
   /**
-   * Stop recording and export WAV - INSTANT client-side mixing (NO SERVER DELAY)
-   * Returns { url: blob URL, blob: audio/wav Blob }
+   * Stop recording and return a downloadable WAV blob mixed from all events.
+   * Uses pre-loaded AudioBuffers for events that used samples; uses procedural
+   * synthesis for events that used the fallback.
+   *
+   * @returns {Promise<{url: string, blob: Blob}>}
    */
   async stopRecording() {
     return new Promise((resolve) => {
       this.mediaRecorder.onstop = async () => {
         try {
-          // Client-side mixing: render all recorded notes
-          const maxDuration = Math.max(
-            ...this.recordingEvents.map(e => e.timestamp_ms / 1000),
-            1
-          ) + 0.7 // Add buffer for last note
-          
-          const sampleRate = this.ctx.sampleRate
-          const channels = 1
-          const frameCount = Math.ceil(maxDuration * sampleRate)
-          const audioBuffer = this.ctx.createBuffer(channels, frameCount, sampleRate)
-          const data = audioBuffer.getChannelData(0)
-          
-          // Synthesize and mix each recorded note into buffer
-          for (const event of this.recordingEvents) {
-            const startFrame = Math.floor(event.timestamp_ms / 1000 * sampleRate)
-            const synthFn = synth[event.instrument] || synth.gangsa
-            const duration = event.instrument === 'kendang' ? 0.15 : 0.6
-            const endFrame = Math.min(startFrame + Math.ceil(duration * sampleRate), frameCount)
-            
-            // Generate synth audio for this event
-            const eventBuffer = this.ctx.createBuffer(1, endFrame - startFrame, sampleRate)
-            const eventData = eventBuffer.getChannelData(0)
-            
-            // Simulate oscillator output for this note
-            const freq = event.freq
-            const params = event.params
-            const gain = params.gain || (event.instrument === 'gangsa' ? 0.8 : 0.7)
-            
-            for (let i = 0; i < eventData.length; i++) {
-              const t = i / sampleRate
-              const envelope = Math.exp(-t / duration * 3) // decay
-              
-              if (event.instrument === 'kendang') {
-                // Pitched drum decay
-                const f = freq * Math.exp(-t / 0.15 * 2)
-                eventData[i] = Math.sin(2 * Math.PI * f * t) * envelope * gain * 0.8
-              } else if (event.instrument === 'suling') {
-                // Flute with slow attack
-                const attack = Math.min(t / 0.08, 1)
-                eventData[i] = Math.sin(2 * Math.PI * freq * t) * envelope * gain * attack
-              } else {
-                // Gangsa: sustained sine decay
-                eventData[i] = Math.sin(2 * Math.PI * freq * t) * envelope * gain
+          const sr      = this.ctx.sampleRate
+          const events  = this.recordingEvents
+          if (events.length === 0) {
+            resolve({ url: '', blob: null }); return
+          }
+
+          // Total duration: last event offset + max note duration
+          const maxOffset  = Math.max(...events.map(e => e.timestamp_ms)) / 1000
+          const bufferSecs = maxOffset + 5.0   // generous tail
+          const frameCount = Math.ceil(bufferSecs * sr)
+          const mix        = new Float32Array(frameCount)
+
+          for (const ev of events) {
+            const startFrame = Math.floor(ev.timestamp_ms / 1000 * sr)
+            let eventData
+
+            if (ev.sampleKey && this.sampleBuffers[ev.sampleKey]) {
+              // Use the pre-loaded AudioBuffer
+              const buf = this.sampleBuffers[ev.sampleKey]
+              eventData = buf.getChannelData(0)
+              const gain = ev.params?.gain ?? 0.8
+              for (let i = 0; i < eventData.length; i++) {
+                const dest = startFrame + i
+                if (dest < frameCount) mix[dest] += eventData[i] * gain
               }
-            }
-            
-            // Mix into main buffer
-            for (let i = startFrame; i < endFrame; i++) {
-              data[i] += eventData[i - startFrame]
+            } else {
+              // Procedural approximation for the recording mix
+              this._mixProcedural(mix, startFrame, ev, sr)
             }
           }
-          
-          // Normalize to prevent clipping
-          let max = 0
-          for (let i = 0; i < frameCount; i++) {
-            max = Math.max(max, Math.abs(data[i]))
-          }
-          if (max > 1) {
-            for (let i = 0; i < frameCount; i++) {
-              data[i] /= max
-            }
-          }
-          
-          // Convert AudioBuffer to WAV blob
-          const wavBlob = this._audioBufferToWav(audioBuffer)
-          const url = URL.createObjectURL(wavBlob)
-          
-          resolve({ url, blob: wavBlob })
-        } catch (error) {
-          console.error('Recording export error:', error)
+
+          // Normalise to prevent clipping
+          let peak = 0
+          for (let i = 0; i < frameCount; i++) peak = Math.max(peak, Math.abs(mix[i]))
+          if (peak > 1) for (let i = 0; i < frameCount; i++) mix[i] /= peak
+
+          const wavBlob = this._float32ToWav(mix, sr)
+          resolve({ url: URL.createObjectURL(wavBlob), blob: wavBlob })
+        } catch (err) {
+          console.error('[AudioEngine] Recording export error:', err)
           resolve({ url: '', blob: null })
         }
       }
-
       this.mediaRecorder.stop()
     })
   }
 
-  /**
-   * Convert AudioBuffer to WAV Blob for download
-   */
-  _audioBufferToWav(audioBuffer) {
-    const sampleRate = audioBuffer.sampleRate
-    const channelData = audioBuffer.getChannelData(0)
-    const wav = new Uint8Array(44 + channelData.length * 2)
-    const view = new DataView(wav.buffer)
-    
-    const writeString = (offset, string) => {
-      for (let i = 0; i < string.length; i++) {
-        view.setUint8(offset + i, string.charCodeAt(i))
+  /** Procedural note mixing for the recording export. */
+  _mixProcedural(mix, startFrame, ev, sr) {
+    const { instrument, noteIndex, freq, params } = ev
+    const isTung  = noteIndex % 2 === 0
+    const durSecs = instrument === 'kendang' ? (isTung ? 0.5 : 0.15) : 0.8
+    const frames  = Math.ceil(durSecs * sr)
+    const gain    = params?.gain ?? 0.8
+
+    for (let i = 0; i < frames; i++) {
+      const t   = i / sr
+      const dest = startFrame + i
+      if (dest >= mix.length) break
+
+      let sample = 0
+      if (instrument === 'gangsa') {
+        const env = Math.exp(-t * 1.5)
+        sample = Math.sin(2 * Math.PI * freq * t) * env
+        // Inharmonic 2nd partial
+        sample += 0.45 * Math.sin(2 * Math.PI * freq * 2.756 * t) * env
+      } else if (instrument === 'kendang') {
+        const env = Math.exp(-t * (isTung ? 8 : 40))
+        const f   = freq * Math.exp(-t * (isTung ? 4 : 12))
+        sample = Math.sin(2 * Math.PI * f * t) * env
+      } else {
+        const attackF = (params.attack_ms ?? 90) / 1000
+        const att = Math.min(t / attackF, 1.0)
+        const env = att * Math.exp(-t * 0.5)
+        sample = Math.sin(2 * Math.PI * freq * t) * env
       }
+
+      mix[dest] += sample * gain
     }
-    
-    writeString(0, 'RIFF')
-    view.setUint32(4, 36 + channelData.length * 2, true)
-    writeString(8, 'WAVE')
-    writeString(12, 'fmt ')
-    view.setUint32(16, 16, true) // subchunk1size
-    view.setUint16(20, 1, true) // audio format (PCM)
-    view.setUint16(22, 1, true) // num channels
+  }
+
+  // ─── WAV encoder ─────────────────────────────────────────────────────────
+
+  _float32ToWav(samples, sampleRate) {
+    const length = samples.length
+    const buf    = new ArrayBuffer(44 + length * 2)
+    const view   = new DataView(buf)
+    const write  = (off, str) => {
+      for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i))
+    }
+    write(0, 'RIFF')
+    view.setUint32(4,  36 + length * 2, true)
+    write(8, 'WAVE')
+    write(12, 'fmt ')
+    view.setUint32(16, 16,         true)
+    view.setUint16(20, 1,          true)   // PCM
+    view.setUint16(22, 1,          true)   // mono
     view.setUint32(24, sampleRate, true)
-    view.setUint32(28, sampleRate * 2, true) // byte rate
-    view.setUint16(32, 2, true) // block align
-    view.setUint16(34, 16, true) // bits per sample
-    writeString(36, 'data')
-    view.setUint32(40, channelData.length * 2, true)
-    
-    let offset = 44
-    for (let i = 0; i < channelData.length; i++) {
-      const s = Math.max(-1, Math.min(1, channelData[i]))
-      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true)
-      offset += 2
+    view.setUint32(28, sampleRate * 2, true)
+    view.setUint16(32, 2,          true)
+    view.setUint16(34, 16,         true)
+    write(36, 'data')
+    view.setUint32(40, length * 2, true)
+    let off = 44
+    for (let i = 0; i < length; i++) {
+      const s = Math.max(-1, Math.min(1, samples[i]))
+      view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true)
+      off += 2
     }
-    
-    return new Blob([wav], { type: 'audio/wav' })
+    return new Blob([buf], { type: 'audio/wav' })
   }
 
-  /**
-   * Upload custom audio sample for a note
-   */
-  async uploadSample(instrument, noteName, file) {
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
+  // ─── Misc ────────────────────────────────────────────────────────────────
 
-      const response = await fetch(`${API_BASE}/samples/${instrument}/${noteName}`, {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) throw new Error('Upload failed')
-      return await response.json()
-    } catch (error) {
-      console.error('Sample upload error:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Get available instruments from backend
-   */
-  async getInstruments() {
-    try {
-      const response = await fetch(`${API_BASE}/instruments`)
-      if (!response.ok) throw new Error('Failed to fetch instruments')
-      return await response.json()
-    } catch (error) {
-      console.error('Failed to get instruments:', error)
-      return {}
-    }
-  }
-
-  /**
-   * Get recording elapsed time in seconds
-   */
   getRecordingElapsed() {
-    if (!this.mediaRecorder || !this.recordStartTime) return 0
-    return (Date.now() - this.recordStartTime) / 1000
+    return this.recordStartTime ? (Date.now() - this.recordStartTime) / 1000 : 0
   }
 
-  /**
-   * Clear recording data
-   */
   clearRecording() {
-    this.recordedChunks = []
+    this.recordedChunks  = []
     this.recordingEvents = []
     this.recordStartTime = 0
+  }
+
+  async getInstruments() {
+    try {
+      const res = await fetch(`${API_BASE}/instruments`)
+      if (!res.ok) throw new Error('fetch failed')
+      return await res.json()
+    } catch {
+      return {}
+    }
   }
 }

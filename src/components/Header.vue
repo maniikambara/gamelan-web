@@ -9,7 +9,13 @@
     </div>
     <div class="header-right">
       <div id="note-flash" class="note-flash">{{ lastNote || '—' }}</div>
-      <span class="badge badge-syn">Sintetis</span>
+      <span
+        class="badge"
+        :class="synthMode === 'sample' ? 'badge-sam' : 'badge-syn'"
+        :title="synthMode === 'sample' ? 'Memainkan sampel rekaman asli' : 'Menggunakan sintesis prosedural'"
+      >
+        {{ synthMode === 'sample' ? 'Sampel Asli' : 'Sintetis' }}
+      </span>
     </div>
   </header>
 </template>
@@ -18,7 +24,9 @@
 export default {
   props: {
     currentInstrument: String,
-    lastNote: String,
+    lastNote:          String,
+    synthMode:         { type: String, default: 'synth' },
+    samplesReady:      { type: Boolean, default: false },
   },
 }
 </script>
