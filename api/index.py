@@ -67,7 +67,7 @@ def _get_note_params(instrument: str, note_name: str) -> dict:
 
 
 def _load_default_samples() -> None:
-    """Load default samples from api/samples/ directory if available."""
+    """Load default samples from api/samples/ directory if available (WAV + MP3)."""
     samples_dir = Path(__file__).parent / "samples"
     if not samples_dir.exists():
         return
@@ -75,11 +75,17 @@ def _load_default_samples() -> None:
     for inst_dir in sorted(samples_dir.iterdir()):
         if not inst_dir.is_dir():
             continue
-        for wav_file in sorted(inst_dir.glob("*.wav")):
-            note_name = wav_file.stem
+        # Collect both .wav and .mp3 files
+        audio_files = sorted(
+            list(inst_dir.glob("*.wav")) + list(inst_dir.glob("*.mp3"))
+        )
+        for audio_file in audio_files:
+            note_name = audio_file.stem
             key = f"{inst_dir.name}/{note_name}"
+            if key in _SAMPLE_STORE:
+                continue  # skip if already loaded (e.g. duplicate name, different ext)
             try:
-                _SAMPLE_STORE[key] = wav_file.read_bytes()
+                _SAMPLE_STORE[key] = audio_file.read_bytes()
                 loaded += 1
             except Exception as exc:
                 print(f"[startup] Warning: could not load sample {key} — {exc}")
@@ -183,13 +189,54 @@ def _to_wav(audio: np.ndarray, sr: int = SAMPLE_RATE) -> bytes:
     pcm = (np.clip(audio, -1, 1) * 32767).astype(np.int16)
     buf = io.BytesIO(); wavfile.write(buf, sr, pcm); return buf.getvalue()
 
-def _from_wav(raw: bytes) -> tuple[np.ndarray, int]:
+def _is_mp3(raw: bytes) -> bool:
+    """Detect MP3 format by checking for ID3 tag or MPEG sync word."""
+    return raw[:3] == b'ID3' or (len(raw) >= 2 and raw[0] == 0xFF and (raw[1] & 0xE0) == 0xE0)
+
+
+def _mp3_to_wav_bytes(raw: bytes) -> bytes:
+    """Convert MP3 bytes to WAV bytes using pydub (requires ffmpeg)."""
+    try:
+        from pydub import AudioSegment
+        seg = AudioSegment.from_mp3(io.BytesIO(raw))
+        wav_buf = io.BytesIO()
+        seg.export(wav_buf, format="wav")
+        return wav_buf.getvalue()
+    except ImportError:
+        pass
+    # Fallback: try subprocess ffmpeg
+    import subprocess, tempfile, os
+    tmp_mp3 = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
+    tmp_wav = tmp_mp3.name.replace(".mp3", ".wav")
+    try:
+        tmp_mp3.write(raw)
+        tmp_mp3.close()
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", tmp_mp3.name, "-ar", "44100", "-ac", "1", tmp_wav],
+            capture_output=True, check=True,
+        )
+        with open(tmp_wav, "rb") as f:
+            return f.read()
+    finally:
+        for p in (tmp_mp3.name, tmp_wav):
+            try: os.unlink(p)
+            except: pass
+
+
+def _from_audio(raw: bytes) -> tuple[np.ndarray, int]:
+    """Decode audio bytes (WAV or MP3) to float32 mono array + sample rate."""
+    if _is_mp3(raw):
+        raw = _mp3_to_wav_bytes(raw)
     buf = io.BytesIO(raw)
     sr, data = wavfile.read(buf)
     if data.dtype == np.int16: data = data.astype(np.float32)/32768
     elif data.dtype == np.int32: data = data.astype(np.float32)/2**31
     if data.ndim > 1: data = data.mean(axis=1)
     return data.astype(np.float32), sr
+
+
+# Keep backward compat alias
+_from_wav = _from_audio
 
 # ─── Synthesis ───────────────────────────────────────────────────────────────
 
@@ -286,7 +333,7 @@ def synth_suling(freq: float, gain: float = 0.8,
     return _to_wav(_normalize(audio) * gain)
 
 def process_sample(raw_wav: bytes, freq: float, instrument: str, params: dict) -> bytes:
-    audio, sr = _from_wav(raw_wav)
+    audio, sr = _from_audio(raw_wav)
     audio = _normalize(audio)
     res = params.get("resonance", 0.5)
     bw  = max(50, (1-res)*1800+50)
@@ -351,10 +398,17 @@ def get_analysis():
         "available": bool(_SYNTH_PARAMS),
         "instruments": _SYNTH_PARAMS,
     }
+
+
+@app.get("/api/samples/{instrument}/{note}")
+def get_sample(instrument: str, note: str):
+    """Download/get a specific sample audio file."""
     key = f"{instrument}/{note}"
     if key not in _SAMPLE_STORE:
         raise HTTPException(404, "Sample not found")
-    return Response(content=_SAMPLE_STORE[key], media_type="audio/wav")
+    raw = _SAMPLE_STORE[key]
+    media_type = "audio/mpeg" if _is_mp3(raw) else "audio/wav"
+    return Response(content=raw, media_type=media_type)
 
 @app.post("/api/play-note")
 async def play_note(request: Request):

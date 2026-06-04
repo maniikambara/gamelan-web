@@ -61,9 +61,40 @@ F0_BOUNDS = {
 
 # ─── I/O ──────────────────────────────────────────────────────────────────────
 
-def load_wav(path: Path) -> tuple[np.ndarray, int]:
-    """Load WAV file, normalize to float32 [-1, 1], downmix to mono."""
-    sr, data = wavfile.read(path)
+def load_audio(path: Path) -> tuple[np.ndarray, int]:
+    """Load audio file (WAV or MP3), normalize to float32 [-1, 1], downmix to mono."""
+    import io as _io
+
+    if path.suffix.lower() == '.mp3':
+        # Convert MP3 to WAV in-memory
+        raw = path.read_bytes()
+        try:
+            from pydub import AudioSegment
+            seg = AudioSegment.from_mp3(_io.BytesIO(raw))
+            wav_buf = _io.BytesIO()
+            seg.export(wav_buf, format="wav")
+            wav_buf.seek(0)
+            sr, data = wavfile.read(wav_buf)
+        except ImportError:
+            # Fallback: ffmpeg subprocess
+            import subprocess, tempfile, os
+            tmp = tempfile.NamedTemporaryFile(suffix='.mp3', delete=False)
+            tmp_wav = tmp.name.replace('.mp3', '.wav')
+            try:
+                tmp.write(raw)
+                tmp.close()
+                subprocess.run(
+                    ['ffmpeg', '-y', '-i', tmp.name, '-ar', '44100', '-ac', '1', tmp_wav],
+                    capture_output=True, check=True,
+                )
+                sr, data = wavfile.read(tmp_wav)
+            finally:
+                for p in (tmp.name, tmp_wav):
+                    try: os.unlink(p)
+                    except: pass
+    else:
+        sr, data = wavfile.read(path)
+
     if data.dtype == np.int16:
         data = data.astype(np.float32) / 32768.0
     elif data.dtype == np.int32:
@@ -75,6 +106,10 @@ def load_wav(path: Path) -> tuple[np.ndarray, int]:
     if data.ndim > 1:
         data = data.mean(axis=1)
     return data, sr
+
+
+# Backward compat alias
+load_wav = load_audio
 
 
 def resample_to(signal: np.ndarray, sr_in: int, sr_out: int) -> np.ndarray:
@@ -533,7 +568,7 @@ def harmonic_decay_rate(harmonics: list[dict]) -> float:
 def analyze_note(wav_path: Path, instrument: str, note_name: str,
                  verbose: bool = False) -> dict:
     """Full analysis pipeline for a single WAV file."""
-    signal, sr = load_wav(wav_path)
+    signal, sr = load_audio(wav_path)
     if sr != SAMPLE_RATE_TARGET:
         signal = resample_to(signal, sr, SAMPLE_RATE_TARGET)
         sr = SAMPLE_RATE_TARGET
@@ -676,13 +711,18 @@ def main():
         missing[inst] = []
         for note in note_list:
             # Try exact name, then sanitized (replace special chars)
-            candidates = [
-                inst_dir / f"{note}.wav",
-                inst_dir / f"{note.replace('²', '2')}.wav",
-                inst_dir / f"{note.replace(' · ', ' - ')}.wav",
-                inst_dir / f"{note.replace(' · ', '_')}.wav",
-                inst_dir / f"{note.replace(' (octave)', '_oct')}.wav",
+            # For each name variant, try both .wav and .mp3
+            name_variants = [
+                note,
+                note.replace('²', '2'),
+                note.replace(' · ', ' - '),
+                note.replace(' · ', '_'),
+                note.replace(' (octave)', '_oct'),
             ]
+            candidates = []
+            for name in name_variants:
+                candidates.append(inst_dir / f"{name}.wav")
+                candidates.append(inst_dir / f"{name}.mp3")
             for c in candidates:
                 if c.exists():
                     found[inst][note] = c
