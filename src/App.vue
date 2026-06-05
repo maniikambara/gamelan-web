@@ -1,24 +1,20 @@
 <template>
   <div class="app" :style="{ '--accent': accentColor, '--accent-dim': accentDim }">
 
-    <!-- Thin loading bar while samples are fetching -->
-    <div v-if="!samplesReady" class="sample-loading-bar">
+    <!-- Loading bar while analysis parameters are fetching -->
+    <div v-if="!paramsReady" class="sample-loading-bar">
       <div
         class="sample-loading-fill"
-        :style="{ width: `${sampleProgress}%` }"
+        :style="{ width: '100%', animation: 'pulse 1.5s infinite' }"
       />
-      <span class="sample-loading-label">
-        {{ sampleProgress < 100
-          ? `Memuat sampel… ${samplesLoaded}/${samplesTotal}`
-          : 'Sampel siap' }}
-      </span>
+      <span class="sample-loading-label">Memuat parameter sintesis...</span>
     </div>
 
     <Header
       :currentInstrument="currentInstrument"
       :lastNote="lastNote"
       :synthMode="lastSynthMode"
-      :samplesReady="samplesReady"
+      :samplesReady="paramsReady"
     />
     <Sidebar
       :instruments="instruments"
@@ -55,21 +51,17 @@ import Sidebar from './components/Sidebar.vue'
 import InstrumentPanel from './components/InstrumentPanel.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import RecordingPanel from './components/RecordingPanel.vue'
-import SampleUpload from './components/SampleUpload.vue'
 
 export default {
   components: {
-    Header, Sidebar, InstrumentPanel, SettingsPanel, RecordingPanel, SampleUpload,
+    Header, Sidebar, InstrumentPanel, SettingsPanel, RecordingPanel,
   },
   setup() {
     const instruments        = INSTRUMENTS
     const currentInstrument  = ref('gangsa')
     const lastNote           = ref(null)
-    const lastSynthMode      = ref('synth')   // 'sample' | 'synth'
-    const samplesReady       = ref(false)
-    const samplesLoaded      = ref(0)
-    const samplesTotal       = ref(0)
-    const sampleProgress     = ref(0)
+    const lastSynthMode      = ref('synth')
+    const paramsReady        = ref(false)
 
     const audioEngine = new AudioEngine()
 
@@ -82,28 +74,10 @@ export default {
     const accentColor = computed(() => instruments[currentInstrument.value].color)
     const accentDim   = computed(() => instruments[currentInstrument.value].colorDim)
 
-    // ── Pre-load samples on mount ──────────────────────────────────────────
+    // ── Pre-load synthesis parameters on mount ─────────────────────────────
     onMounted(async () => {
-      // Fetch sample count first so the progress bar has a denominator
-      try {
-        const res  = await fetch('/api/samples')
-        const data = await res.json()
-        samplesTotal.value = data.count ?? 0
-      } catch { /* backend not running locally is fine */ }
-
-      if (samplesTotal.value === 0) {
-        samplesReady.value = true
-        return
-      }
-
-      await audioEngine.loadSamples((loaded, total) => {
-        samplesLoaded.value  = loaded
-        samplesTotal.value   = total
-        sampleProgress.value = Math.round((loaded / total) * 100)
-      })
-
-      sampleProgress.value = 100
-      samplesReady.value   = true
+      await audioEngine.loadSynthesisParams()
+      paramsReady.value = true
     })
 
     // ── Instrument selection ───────────────────────────────────────────────
@@ -116,7 +90,7 @@ export default {
         currentInstrument.value, noteIndex, noteName, freq,
         params[currentInstrument.value]
       )
-      if (mode === 'sample' || mode === 'synth') lastSynthMode.value = mode
+      lastSynthMode.value = mode
     }
 
     const muteNote = ({ noteName }) => {
@@ -137,7 +111,7 @@ export default {
 
     return {
       instruments, currentInstrument, lastNote, lastSynthMode,
-      samplesReady, samplesLoaded, samplesTotal, sampleProgress,
+      paramsReady,
       params, accentColor, accentDim,
       selectInstrument, playNote, muteNote, updateParam, startRecording,
       onRecordingStop,
@@ -145,3 +119,4 @@ export default {
   },
 }
 </script>
+

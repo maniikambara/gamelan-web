@@ -10,11 +10,10 @@
     <div class="header-right">
       <div id="note-flash" class="note-flash">{{ lastNote || '—' }}</div>
       <span
-        class="badge"
-        :class="synthMode === 'sample' ? 'badge-sam' : 'badge-syn'"
-        :title="synthMode === 'sample' ? 'Memainkan sampel rekaman asli' : 'Menggunakan sintesis prosedural'"
+        class="badge badge-syn"
+        title="Menggunakan sintesis prosedural"
       >
-        {{ synthMode === 'sample' ? 'Sampel Asli' : 'Sintetis' }}
+        Sintesis Prosedural
       </span>
     </div>
   </header>

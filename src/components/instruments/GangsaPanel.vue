@@ -1,8 +1,9 @@
 <template>
   <div class="gangsa-panel">
 
-    <!-- Full gangsa instrument image with clickable bar zones -->
+    <!-- Gangsa image container with bilah overlays -->
     <div class="gangsa-stage">
+      <!-- Base gangsa body image -->
       <img
         src="/assets/gangsa.png"
         alt="Gangsa Bali"
@@ -10,50 +11,46 @@
         draggable="false"
       />
 
-      <!-- Invisible clickable zones over each bar -->
-      <div
-        v-for="(note, i) in instrument.notes"
-        :key="note.index"
-        class="gangsa-hit"
-        :class="{
-          'gangsa-hit--play': barStates[i] === 'play',
-          'gangsa-hit--mute': barStates[i] === 'mute',
-        }"
-        :style="getBarStyle(i)"
-        :title="`${note.name} · ${KEYS[i]}`"
-        @mousedown="onBarDown($event, i)"
-        @touchstart.prevent="onBarTouch($event, i)"
-      >
-        <!-- Glow overlay -->
-        <div class="gangsa-glow" />
-        <!-- Note label -->
-        <span class="gangsa-note-label">{{ note.name }}</span>
-        <!-- Key badge -->
-        <span class="gangsa-key-label">{{ KEYS[i] }}</span>
+      <!-- Overlay layer: note labels + bilah images -->
+      <div class="gangsa-overlay">
+        <!-- Per-bilah: label + image + glow -->
+        <div
+          v-for="(note, i) in instrument.notes"
+          :key="note.index"
+          class="gangsa-bilah-wrap"
+          :class="{
+            'gangsa-bilah-wrap--play': barStates[i] === 'play',
+            'gangsa-bilah-wrap--mute': barStates[i] === 'mute',
+          }"
+          :style="BAR_STYLES[i]"
+          @mousedown="onBarDown($event, i)"
+          @touchstart.prevent="onBarTouch($event, i)"
+        >
+          <img
+            :src="`/assets/gangsa/${i + 1}.png`"
+            :alt="note.name"
+            class="gangsa-bilah-img"
+            draggable="false"
+          />
+          <div class="gangsa-bilah-glow" />
+        </div>
+
+        <!-- Note labels (positioned above each bilah) -->
+        <span
+          v-for="(note, i) in instrument.notes"
+          :key="'lbl'+i"
+          class="gangsa-note-lbl"
+          :class="{
+            'gangsa-note-lbl--play': barStates[i] === 'play',
+            'gangsa-note-lbl--mute': barStates[i] === 'mute',
+          }"
+          :style="LABEL_STYLES[i]"
+        >{{ note.name }}</span>
       </div>
     </div>
 
-    <!-- Keyboard guide row -->
-    <div class="gangsa-keys-row">
-      <div v-for="(note, i) in instrument.notes" :key="'k'+i" class="gangsa-key-cell"
-        :class="{
-          'gangsa-key-cell--play': barStates[i] === 'play',
-          'gangsa-key-cell--mute': barStates[i] === 'mute',
-        }"
-      >
-        <kbd>{{ KEYS[i] }}</kbd>
-        <span>{{ note.name }}</span>
-      </div>
-    </div>
-
-    <!-- Legend -->
-    <div class="gangsa-legend">
-      <span class="legend-play">&#9654; Klik tengah bilah = pukul</span>
-      <span class="legend-sep">&#183;</span>
-      <span class="legend-mute">&#9632; Klik bawah bilah = mute</span>
-      <span class="legend-sep">&#183;</span>
-      <span class="legend-kbd">Keyboard Q&#8211;P</span>
-    </div>
+    <!-- Help text -->
+    <p class="gangsa-hint">Klik pada bilah untuk memainkan nada</p>
 
   </div>
 </template>
@@ -65,18 +62,34 @@ const KEYS = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P']
 const KEY_TO_IDX = Object.fromEntries(KEYS.map((k, i) => [k.toLowerCase(), i]))
 const MUTE_ZONE_RATIO = 0.75
 
-// Derived from gangsa.png (3799 × 2129)
-// xStart=285  xEnd=3593 (from instruments.js)
-const IMG_W = 3799
-const IMG_H = 2129
-const X_START = 285
-const X_END   = 3593
-const BAR_COUNT = 10
-const BAR_SLOT  = (X_END - X_START) / BAR_COUNT  // ~330.8 px
+// Per-bilah positions derived from the reference design (1365×765 container).
+// Converted to percentages for responsive scaling.
+const BAR_LAYOUT = [
+  { left: 17.07, top: 23.14, width: 10.84, height: 35.29 },
+  { left: 24.54, top: 23.27, width: 10.33, height: 35.56 },
+  { left: 32.09, top: 24.05, width:  9.30, height: 34.25 },
+  { left: 39.85, top: 24.44, width:  8.21, height: 33.46 },
+  { left: 47.40, top: 25.23, width:  6.45, height: 31.11 },
+  { left: 54.58, top: 25.23, width:  5.93, height: 31.11 },
+  { left: 60.95, top: 25.62, width:  6.67, height: 29.93 },
+  { left: 66.52, top: 26.27, width:  6.81, height: 28.63 },
+  { left: 72.16, top: 26.67, width:  6.59, height: 28.10 },
+  { left: 77.66, top: 27.45, width:  6.96, height: 27.19 },
+]
 
-// Vertical bar region in the photo (measured from gangsa.png)
-const BAR_TOP    = 250   // where bar tops begin
-const BAR_BOTTOM = 1380  // where bar bottoms end
+// Pre-computed inline styles for each bar
+const BAR_STYLES = BAR_LAYOUT.map(b => ({
+  left:   `${b.left}%`,
+  top:    `${b.top}%`,
+  width:  `${b.width}%`,
+  height: `${b.height}%`,
+}))
+
+// Label positions: centered horizontally above each bilah, at ~19% from top
+const LABEL_STYLES = BAR_LAYOUT.map(b => ({
+  left: `${b.left + b.width / 2}%`,
+  top:  `${b.top - 4}%`,
+}))
 
 export default {
   props: {
@@ -86,19 +99,6 @@ export default {
   setup(props, { emit }) {
     const barStates = reactive({})
     const heldKeys = new Set()
-
-    const getBarStyle = (i) => {
-      const left   = ((X_START + i * BAR_SLOT) / IMG_W) * 100
-      const width  = (BAR_SLOT / IMG_W) * 100
-      const top    = (BAR_TOP / IMG_H) * 100
-      const height = ((BAR_BOTTOM - BAR_TOP) / IMG_H) * 100
-      return {
-        left:   `${left}%`,
-        width:  `${width}%`,
-        top:    `${top}%`,
-        height: `${height}%`,
-      }
-    }
 
     const playBar = (i) => {
       const note = props.instrument.notes[i]
@@ -166,7 +166,7 @@ export default {
       window.removeEventListener('keyup', onKeyUp)
     })
 
-    return { KEYS, barStates, getBarStyle, onBarDown, onBarTouch }
+    return { BAR_STYLES, LABEL_STYLES, barStates, onBarDown, onBarTouch }
   },
 }
 </script>
