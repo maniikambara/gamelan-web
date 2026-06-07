@@ -69,37 +69,29 @@ export const INSTRUMENTS = {
   suling: {
     key: 'suling',
     label: 'Suling Bali',
-    description: 'Seruling bambu 6 lubang · laras pelog Bali · hembusan halus',
+    description: 'Seruling bambu 6 lubang · 10 nada (5 rendah, 5 tinggi)',
     image: '/assets/suling.png',
     imgW: 387,
     imgH: 688,
     color: '#7EC850',
     colorDim: 'rgba(126,200,80,0.12)',
     notes: [
-      { index: 0, name: 'Dong',  freq: 558  },
-      { index: 1, name: 'Deng',  freq: 621  },
-      { index: 2, name: 'Dung',  freq: 764  },
-      { index: 3, name: 'Dang',  freq: 800  },
-      { index: 4, name: 'Ding',  freq: 1024 },
-      { index: 5, name: "Deng'", freq: 1250 },
+      { index: 0, name: 'Deng 1', freq: 558, closedHoles: [0, 1, 2, 3, 4, 5] },
+      { index: 1, name: 'Dung 1', freq: 621, closedHoles: [0, 1, 2, 3] },
+      { index: 2, name: 'Dang 1', freq: 764, closedHoles: [0, 1, 2] },
+      { index: 3, name: 'Ding 1', freq: 800, closedHoles: [0, 2] },
+      { index: 4, name: 'Dong 1', freq: 1024, closedHoles: [1, 2, 4, 5] },
+      { index: 5, name: 'Deng 2', freq: 1116, closedHoles: [0, 1, 2, 3, 4, 5] },
+      { index: 6, name: 'Dung 2', freq: 1242, closedHoles: [0, 1, 2, 3] },
+      { index: 7, name: 'Dang 2', freq: 1528, closedHoles: [0, 1, 2] },
+      { index: 8, name: 'Ding 2', freq: 1600, closedHoles: [0, 2] },
+      { index: 9, name: 'Dong 2', freq: 2048, closedHoles: [1, 2, 4, 5] },
     ],
     holeY: [286, 320, 359, 440, 479, 526],
     holeCX: 196,
     hitRadius: 42,
     detectHit(x, y, imgNaturalW, displayW) {
-      const scale = imgNaturalW / displayW
-      const ox = x * scale
-      const oy = y * scale
-      let bestI = -1
-      let bestD = Infinity
-      this.holeY.forEach((hy, i) => {
-        const d = Math.hypot(ox - this.holeCX, oy - hy)
-        if (d < bestD) {
-          bestD = d
-          bestI = i
-        }
-      })
-      return bestD <= this.hitRadius ? bestI : null
+      return null
     },
   },
 }
