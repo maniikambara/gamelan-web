@@ -133,7 +133,7 @@ INSTRUMENTS = {
             {"index": 2, "name": "4 Fa",  "freq": 659},
             {"index": 3, "name": "5 Sol", "freq": 784},
             {"index": 4, "name": "7 Si",  "freq": 880},
-            {"index": 5, "name": "1 Do (octave)", "freq": 1047},
+            {"index": 5, "name": "1 Do (oktaf)", "freq": 1047},
         ],
     },
 }

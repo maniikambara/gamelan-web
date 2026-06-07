@@ -27,7 +27,7 @@ api/
 │       ├── 4 Fa.wav
 │       ├── 5 Sol.wav
 │       ├── 7 Si.wav
-│       └── 1 Do (octave).wav
+│       └── 1 Do (oktaf).wav
 ├── index.py
 └── SAMPLES_README.md (file ini)
 ```

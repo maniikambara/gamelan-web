@@ -1,148 +1,148 @@
 # Gamelan Bali Synthesizer
 
-A web-based interactive synthesizer built with Vue.js and Python that recreates the sounds of three traditional Balinese instruments: Gangsa, Kendang, and Suling. The synthesizer combines authentic instrument modeling with an interactive Vue.js frontend and a Python FastAPI backend for real-time audio synthesis and recording.
+Sintetisator interaktif berbasis web yang dibangun dengan Vue.js dan Python untuk mereproduksi suara tiga instrumen tradisional Bali: Gangsa, Kendang, dan Suling. Proyek ini menggabungkan pemodelan instrumen autentik dengan antarmuka Vue.js dan backend FastAPI Python untuk sintesis audio waktu nyata dan perekaman sesi.
 
-## Overview
+## Ringkasan
 
-This project is an academic work by Group 1 from the Department of Computer Science, Faculty of Mathematics and Natural Sciences, Udayana University (2026). The synthesizer provides an immersive, interactive experience of Balinese musical tradition through accurate acoustic modeling and responsive visual feedback.
+Proyek ini merupakan karya akademis oleh Kelompok 1 dari Program Studi Teknik Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana (2026). Sintetisator ini memberikan pengalaman interaktif yang mendalam terhadap tradisi musik Bali melalui pemodelan akustik yang akurat dan respons visual yang responsif.
 
-## Features
+## Fitur
 
-### Instruments
+### Instrumen
 
-**Gangsa** — A metallic xylophone-like instrument with ten metal bars tuned to the Balinese pelog scale. Features realistic metallic timbre with detuning effects (ombak) that create characteristic beating and resonance effects.
+**Gangsa** — Instrumen metalofon mirip silofon dengan sepuluh bilah logam yang diselaraskan dengan laras pelog Bali. Memiliki timbre logam realistis dengan efek penataan nada (ombak) untuk menciptakan efek resonansi dan denyut suara yang khas.
 
-**Kendang** — A two-faced drum with four distinct playing techniques: center and rim strikes on both front and back faces. Produces tonal and percussive timbres that serve as the rhythmic foundation in Balinese ensembles.
+**Kendang** — Gendang bermembran ganda dengan empat teknik pukulan: pukulan tengah dan pinggir pada muka depan dan belakang. Menghasilkan timbre tonal dan perkusif yang menjadi fondasi ritmis dalam ansambel gamelan Bali.
 
-**Suling Bali** — A six-hole bamboo flute with gentle breath articulation and subtle vibrato. Produces melodic lines with the warm, organic character of traditional bamboo instruments.
+**Suling Bali** — Seruling bambu dengan enam lubang nada yang dilengkapi dengan artikulasi tiupan halus dan vibrato tipis. Menghasilkan melodi dengan karakter hangat dan organik khas instrumen bambu tradisional.
 
-### Core Capabilities
+### Kapabilitas Utama
 
-- **Client-side Synthesis** — All sounds are synthesized instantly in the browser using the Web Audio API with zero latency. Each instrument has carefully tuned oscillators and filters to approximate traditional Balinese instrument timbre.
-- **Real-time Parameter Adjustment** — Fine-tune each instrument's acoustic characteristics (resonance, gain, breath intensity, attack time, release duration, detuning effects) via interactive sliders. Changes apply immediately to the next note.
-- **Audio Recording** — Record entire sessions and download as WAV format with client-side synthesis and mixing for accurate playback.
-- **Custom Audio Samples** — Upload WAV, MP3, OGG, or FLAC audio files for any note. Uploaded samples are available on the backend for advanced workflows.
-- **Visual Feedback** — Click-responsive overlays highlight playing zones and display note names in real-time.
-- **Responsive Design** — Optimized for desktop and tablet browsers; adapts gracefully to smaller screens.
+- **Sintesis Sisi Klien** — Semua suara disintesis secara instan di peramban menggunakan Web Audio API tanpa latensi. Setiap instrumen memiliki osilator dan filter yang ditala secara cermat mendekati timbre instrumen tradisional Bali.
+- **Penyesuaian Parameter Waktu Nyata** — Pengguna dapat mengatur karakteristik akustik instrumen seperti resonansi, volume, hembusan nafas, waktu serang (attack), durasi pelepasan (release), dan efek ombak melalui slider interaktif. Perubahan langsung diterapkan pada nada berikutnya.
+- **Perekaman Audio** — Sesi bermain dapat direkam dan diunduh dalam format WAV menggunakan pencampuran sisi klien untuk pemutaran ulang yang akurat.
+- **Sampel Audio Kustom** — Pengguna dapat mengunggah file audio berformat WAV, MP3, OGG, atau FLAC untuk nada tertentu. Sampel yang diunggah akan tersedia di backend untuk alur kerja lanjutan.
+- **Umpan Balik Visual** — Antarmuka responsif yang menyoroti area interaksi instrumen dan menampilkan nama nada secara waktu nyata.
+- **Desain Responsif** — Dioptimalkan untuk peramban desktop dan tablet, serta menyesuaikan dengan baik pada layar yang lebih kecil.
 
-## Project Structure
+## Struktur Proyek
 
 ```text
 gamelan-web/
-├── public/                 # Static assets
-│   ├── index.html         # HTML entry point
-│   ├── logo.svg           # Application logo
-│   ├── gangsa.png         # Gangsa instrument image
-│   ├── kendang.png        # Kendang instrument image
-│   ├── suling.png         # Suling instrument image
-│   └── snare.png          # Kendang snare hit-zone reference
-├── src/                    # Vue.js source code
-│   ├── main.js            # Application entry point
-│   ├── App.vue            # Root component with state management
-│   ├── style.css          # Global styles
-│   ├── instruments.js     # Instrument definitions and hit-zone detection
-│   ├── audio.js           # API client for backend synthesis and recording
-│   └── components/        # Vue components
-│       ├── Header.vue         # Header with title and note display
-│       ├── Sidebar.vue        # Instrument navigation
-│       ├── InstrumentPanel.vue    # Main instrument display router
-│       ├── SettingsPanel.vue      # Audio parameter controls
-│       ├── RecordingPanel.vue     # Recording controls and playback
-│       ├── SampleUpload.vue       # Sample file upload interface
-│       └── instruments/       # Instrument-specific panels
-│           ├── GangsaPanel.vue    # Interactive gangsa display
-│           ├── KendangPanel.vue   # Dual-drum interface
-│           └── SulingPanel.vue    # Flute hole selector
-├── api/                    # Python FastAPI backend
-│   ├── index.py           # FastAPI server with synthesis endpoints
-│   ├── requirements.txt    # Python dependencies
-│   └── samples/           # [OPTIONAL] Default sample directory
-│       ├── gangsa/        # Gangsa note samples
-│       ├── kendang/       # Kendang sound samples
-│       └── suling/        # Suling note samples
-├── vite.config.js         # Vite build configuration
-├── vercel.json            # Vercel deployment configuration
-├── package.json           # Node.js dependencies
-└── README.md              # This file
+├── public/                 # Aset statis
+│   ├── index.html         # Titik masuk HTML
+│   ├── logo.svg           # Logo aplikasi
+│   ├── gangsa.png         # Gambar instrumen Gangsa
+│   ├── kendang.png        # Gambar instrumen Kendang
+│   ├── suling.png         # Gambar instrumen Suling
+│   └── snare.png          # Referensi zona pukul snare Kendang
+├── src/                    # Kode sumber Vue.js
+│   ├── main.js            # Titik masuk aplikasi
+│   ├── App.vue            # Komponen utama dengan manajemen status
+│   ├── style.css          # Gaya global
+│   ├── instruments.js     # Definisi instrumen dan deteksi zona pukul
+│   ├── audio.js           # Klien API untuk sintesis sisi backend dan perekaman
+│   └── components/        # Komponen Vue
+│       ├── Header.vue         # Header dengan judul dan tampilan nada
+│       ├── Sidebar.vue        # Navigasi instrumen
+│       ├── InstrumentPanel.vue    # Router tampilan instrumen utama
+│       ├── SettingsPanel.vue      # Kontrol parameter audio
+│       ├── RecordingPanel.vue     # Kontrol perekaman dan pemutaran
+│       ├── SampleUpload.vue       # Antarmuka unggah file sampel
+│       └── instruments/       # Panel spesifik instrumen
+│           ├── GangsaPanel.vue    # Tampilan interaktif Gangsa
+│           ├── KendangPanel.vue   # Antarmuka kendang ganda
+│           └── SulingPanel.vue    # Selektor lubang suling
+├── api/                    # Backend Python FastAPI
+│   ├── index.py           # Server FastAPI dengan endpoint sintesis
+│   ├── requirements.txt    # Dependensi Python
+│   └── samples/           # Direktori sampel default (opsional)
+│       ├── gangsa/        # Sampel nada Gangsa
+│       ├── kendang/       # Sampel suara Kendang
+│       └── suling/        # Sampel nada Suling
+├── vite.config.js         # Konfigurasi build Vite
+├── vercel.json            # Konfigurasi penyebaran Vercel
+├── package.json           # Dependensi Node.js
+└── README.md              # File ini
 ```
 
-## Architecture
+## Arsitektur
 
 ### Frontend (Vue.js 3)
 
-The Vue.js frontend is a component-based single-page application that manages the user interface and synthesizes audio entirely in the browser using the Web Audio API.
+Frontend Vue.js dirancang sebagai aplikasi satu halaman berbasis komponen yang mengelola antarmuka pengguna dan mensintesis audio langsung di peramban menggunakan Web Audio API.
 
-- **App.vue** — Root component that manages global state (current instrument, synthesis parameters, currently playing note)
-- **Header.vue** — Displays application title, logo, and last played note
-- **Sidebar.vue** — Instrument navigation and selection
-- **InstrumentPanel.vue** — Dynamic component router that displays the selected instrument interface
-- **Instrument Components** — GangsaPanel, KendangPanel, SulingPanel implement canvas-based hit detection and note triggering
-- **SettingsPanel.vue** — Parameter sliders for instrument customization (resonance, gain, breath, attack, release, etc.)
-- **RecordingPanel.vue** — Controls for recording sessions and downloading WAV files
-- **SampleUpload.vue** — File upload interface for audio samples
-- **audio.js** — Web Audio API synthesis engine with tuned oscillators and filters for each instrument; handles recording and client-side mixing
+- **App.vue** — Komponen utama yang mengelola status global (instrumen aktif, parameter sintesis, nada yang sedang dimainkan).
+- **Header.vue** — Menampilkan judul aplikasi, logo, dan nada terakhir yang dimainkan.
+- **Sidebar.vue** — Navigasi dan pemilihan instrumen.
+- **InstrumentPanel.vue** — Router komponen dinamis yang menampilkan antarmuka instrumen terpilih.
+- **Komponen Instrumen** — GangsaPanel, KendangPanel, dan SulingPanel mengimplementasikan deteksi ketukan berbasis kanvas dan pemicu nada.
+- **SettingsPanel.vue** — Slider parameter untuk kustomisasi instrumen (resonansi, volume, hembusan, attack, release, dll).
+- **RecordingPanel.vue** — Kontrol untuk merekam sesi dan mengunduh file WAV.
+- **SampleUpload.vue** — Antarmuka unggah untuk sampel audio eksternal.
+- **audio.js** — Mesin sintesis Web Audio API dengan osilator dan filter terkalibrasi untuk setiap instrumen, serta menangani perekaman dan pencampuran sisi klien.
 
 ### Backend (Python FastAPI)
 
-The FastAPI backend provides optional advanced audio synthesis, sample management, and recording export capabilities:
+Backend FastAPI menyediakan opsi sintesis audio tingkat lanjut, pengelolaan sampel, dan fungsi ekspor rekaman:
 
-- **Synthesis Endpoints** — `/api/synthesize` and `/api/play-note` generate audio on-demand using NumPy and SciPy with sophisticated filtering and sample rate conversion
-- **Sample Management** — `/api/samples/{instrument}/{note}` for uploading and retrieving audio samples
-- **Recording Export** — `/api/export-recording` mixes and exports recorded synthesis events to WAV
-- **Metadata** — `/api/instruments` returns instrument and note definitions, `/api/health` for health checks
-- **In-Memory Caching** — Uploaded samples are cached during the serverless function lifetime for fast playback
+- **Endpoint Sintesis** — `/api/synthesize` dan `/api/play-note` menghasilkan audio sesuai kebutuhan menggunakan NumPy dan SciPy dengan pemrosesan filter tingkat lanjut dan konversi laju sampel.
+- **Manajemen Sampel** — `/api/samples/{instrument}/{note}` untuk mengunggah dan mengambil sampel audio.
+- **Ekspor Rekaman** — `/api/export-recording` mencampur dan mengekspor rangkaian ketukan menjadi file WAV tunggal.
+- **Metadata** — `/api/instruments` mengembalikan daftar instrumen beserta nada, dan `/api/health` untuk pemeriksaan status server.
+- **Penyimpanan dalam Memori** — Sampel yang diunggah akan disimpan dalam cache memori selama masa pakai fungsi serverless untuk memastikan pemutaran cepat.
 
-### Synthesis Architecture
+### Arsitektur Sintesis
 
-**Frontend (Web Audio API)** — The primary audio engine uses the Web Audio API to synthesize all sounds directly in the browser, providing zero-latency playback:
+**Sisi Klien (Web Audio API)** — Mesin audio utama mensintesis suara secara langsung di peramban untuk menghasilkan pemutaran tanpa latensi:
 
-**Gangsa** — Five oscillators at inharmonic ratios [1.0, 2.756, 5.404, 8.933, 13.35] create the metallic ring. A detuned copy is mixed at lower amplitude to produce beating (ombak) effects. A bandpass filter emphasizes the fundamental frequency.
+**Gangsa** — Lima osilator dengan rasio inharmonis [1.0, 2.756, 5.404, 8.933, 13.35] digunakan untuk membentuk karakter suara logam. Salinan yang ditata ulang (detuned) dicampur pada amplitudo rendah untuk menghasilkan efek ombak (denyut suara). Filter bandpass digunakan untuk memperkuat frekuensi fundamental.
 
-**Kendang Tengah (Center)** — A pitched oscillator combined with highpass-filtered noise for body resonance. Pitch decays exponentially to create the characteristic pitch-drop effect.
+**Kendang Tengah (Tung)** — Osilator bernada dipadukan dengan derau (noise) yang disaring highpass untuk resonansi rongga gendang. Frekuensi nada menurun secara eksponensial untuk menciptakan efek penurunan nada yang khas.
 
-**Kendang Pinggir (Rim)** — Highpass-filtered noise with an exponentially decaying click component, creating the sharp percussive attack.
+**Kendang Pinggir (Pak)** — Derau disaring highpass dengan komponen klik yang meluruh secara eksponensial untuk meniru serangan pukulan tajam pada tepi kulit kendang.
 
-**Suling Bali** — A sine oscillator with a slow attack envelope to simulate breath onset. Optional breath noise adds realism.
+**Suling Bali** — Osilator sinus dengan amplop attack lambat untuk meniru permulaan tiupan nafas. Derau tiupan opsional ditambahkan untuk meningkatkan realisme.
 
-**Backend (NumPy/SciPy, Optional)** — Available for advanced workflows:
+**Sisi Server (NumPy/SciPy, Opsional)** — Digunakan untuk alur kerja tingkat lanjut:
 
-**Gangsa** — Five inharmonic partials at ratios [1.0, 2.756, 5.404, 8.933, 13.35] create the metallic ring. A detuned copy (ombak frequency, default 6 Hz) is mixed at lower amplitude to produce beating effects. Bandpass resonance filter emphasizes the fundamental.
+**Gangsa** — Lima parsial inharmonis pada rasio [1.0, 2.756, 5.404, 8.933, 13.35] membentuk suara logam. Salinan dengan frekuensi ombak (bawaan 6 Hz) dicampur pada amplitudo lebih rendah. Filter resonansi bandpass memperkuat frekuensi fundamental.
 
-**Kendang Tengah (Center)** — A pitched sine component (fundamental) combined with bandpass-filtered noise for body resonance. The depth parameter blends between tonal and noisy character.
+**Kendang Tengah (Tung)** — Komponen sinus bernada (fundamental) dipadukan dengan derau tersaring bandpass untuk resonansi badan gendang. Parameter kedalaman mengontrol keseimbangan antara karakter tonal dan desis derau.
 
-**Kendang Pinggir (Rim)** — Highpass-filtered noise with an exponentially decaying square wave click. The dryness parameter controls the balance between click and resonance.
+**Kendang Pinggir (Pak)** — Derau tersaring bandpass dipadukan dengan gelombang kotak klik yang meluruh secara eksponensial. Parameter kekeringan (dryness) mengontrol proporsi antara klik dan resonansi.
 
-**Suling Bali** — Three harmonics (fundamental, 2x, 3x) with amplitude envelope controlled by attack time. Optional breath noise (bandpass-filtered at 1.5x fundamental) adds realism.
+**Suling Bali** — Tiga harmonik (fundamental, 2x, 3x) dengan amplop amplitudo yang dikontrol oleh waktu attack. Derau tiupan nafas (disaring bandpass pada 1.5x fundamental) ditambahkan untuk hasil yang lebih alami.
 
-All synthesis uses ADSR (Attack-Decay-Sustain-Release) envelopes calibrated to the physical characteristics of each instrument.
+Semua proses sintesis menggunakan amplop ADSR (Attack, Decay, Sustain, Release) yang dikalibrasi sesuai dengan karakteristik fisik asli masing-masing instrumen.
 
-## Getting Started
+## Memulai
 
-### Prerequisites
+### Prasyarat
 
-- Node.js 18+ and npm (for frontend development and building)
-- Python 3.8+ (for running the backend locally)
-- Modern web browser with Web Audio API support
+- Node.js versi 18 ke atas dan npm (untuk pengembangan frontend dan build)
+- Python versi 3.8 ke atas (untuk menjalankan server backend secara lokal)
+- Peramban web modern dengan dukungan Web Audio API
 
-### Local Development
+### Pengembangan Lokal
 
-1. Clone or download the repository.
+1. Kloning atau unduh repositori ini.
 
-2. Install Node.js dependencies:
+2. Instal dependensi Node.js:
 
    ```bash
    npm install
    ```
 
-3. Start the Vite development server:
+3. Jalankan server pengembangan Vite:
 
    ```bash
    npm run dev
    ```
 
-   The frontend is now accessible at `http://localhost:5173`.
+   Frontend sekarang dapat diakses melalui alamat `http://localhost:5173`.
 
-4. In a separate terminal, start the Python backend:
+4. Di terminal terpisah, jalankan server Python backend:
 
    ```bash
    cd api
@@ -150,69 +150,69 @@ All synthesis uses ADSR (Attack-Decay-Sustain-Release) envelopes calibrated to t
    python -m uvicorn index:app --host 0.0.0.0 --port 8000 --reload
    ```
 
-   The backend API is now available at `http://localhost:8000`.
+   Backend API sekarang berjalan di `http://localhost:8000`.
 
-5. Open `http://localhost:5173` in your browser and begin playing instruments. The development server automatically proxies `/api/*` requests to the backend on port 8000.
+5. Buka `http://localhost:5173` di peramban Anda. Server pengembangan secara otomatis mengarahkan permintaan `/api/*` ke backend pada port 8000.
 
-### Building for Production
+### Membangun untuk Produksi
 
-Build the Vue.js frontend for production:
+Membangun frontend Vue.js untuk siap dirilis:
 
 ```bash
 npm run build
 ```
 
-The compiled frontend is output to the `dist/` directory. For Vercel deployment, the `vercel.json` configuration automatically builds and deploys both the frontend and backend.
+Hasil kompilasi akan diletakkan di direktori `dist/`. Untuk deployment menggunakan Vercel, file konfigurasi `vercel.json` sudah disiapkan untuk mengompilasi dan menyebarkan frontend serta backend secara otomatis.
 
-## Usage
+## Penggunaan
 
-### Playing Instruments
+### Memainkan Instrumen
 
-1. Select an instrument from the left sidebar (Gangsa, Kendang, or Suling).
-2. Click on the displayed instrument image to trigger sounds:
-   - **Gangsa**: Click on any metal bar; detected by horizontal position.
-   - **Kendang**: Click on the drum face; center (Tung) vs. rim (Pak) based on distance from center.
-   - **Suling**: Click on any of the six finger holes.
+1. Pilih instrumen dari sidebar kiri (Gangsa, Kendang, atau Suling Bali).
+2. Klik pada gambar instrumen untuk memicu suara:
+   - **Gangsa**: Klik pada bilah logam; terdeteksi berdasarkan posisi horizontal.
+   - **Kendang**: Klik pada muka drum; bagian tengah (Tung) dan pinggir (Pak) ditentukan berdasarkan jarak klik dari titik tengah.
+   - **Suling**: Klik pada salah satu dari enam lubang nada.
 
-### Adjusting Sound Parameters
+### Mengatur Parameter Suara
 
-Use the sliders in the "Pengaturan Suara" (Sound Settings) panel on the right to fine-tune each instrument's characteristics. Changes apply immediately to the next note played. Parameters persist during the session but reset on page reload.
+Gunakan slider di panel "Pengaturan Suara" di sebelah kanan untuk menyesuaikan karakter suara. Perubahan diterapkan langsung pada ketukan berikutnya. Parameter disimpan selama sesi berlangsung, namun akan diatur ulang saat halaman dimuat kembali.
 
-**Available parameters:**
+**Parameter yang tersedia:**
 
-- **Volume** — Master output level
-- **Resonance** — Emphasis on fundamental frequency
-- **Gangsa-Specific**:
-  - Ombak (Detuning) — Frequency offset for beating effects
-  - Release (ms) — Duration of decay tail
-- **Kendang-Specific**:
-  - Depth — Blend between tonal and noisy character (Tung)
-  - Dryness — Balance between click and resonance (Pak)
-- **Suling-Specific**:
-  - Breath — Intensity of breath noise
-  - Attack (ms) — Time to reach full volume
+- **Volume** — Tingkat kekuatan suara output utama
+- **Resonansi** — Penguatan pada frekuensi fundamental
+- **Parameter Gangsa**:
+  - Ombak (Detuning) — Pergeseran frekuensi untuk efek denyut suara
+  - Release (ms) — Durasi peluruhan ekor suara setelah bilah dipukul
+- **Parameter Kendang**:
+  - Kedalaman Tung — Keseimbangan antara karakter tonal dan desis pada bagian tengah
+  - Kekeringan Pak — Keseimbangan antara suara klik tajam dan resonansi kulit tepi
+- **Parameter Suling**:
+  - Hembusan Nafas — Intensitas derau tiupan nafas
+  - Attack (ms) — Waktu yang dibutuhkan untuk mencapai volume maksimal
 
-### Recording Sessions
+### Perekaman Sesi
 
-1. Click "Mulai Rekam" (Start Recording) to begin recording.
-2. Play the instruments; all synthesized audio is captured.
-3. Click "Hentikan Rekaman" (Stop Recording) to finalize.
-4. Download the resulting WAV file or play it back in the browser.
-5. Click "Hapus Rekaman" (Clear Recording) to discard and start a new session.
+1. Klik tombol "Mulai Rekam" untuk mulai merekam permainan Anda.
+2. Mainkan instrumen seperti biasa; semua audio sintesis akan ditangkap.
+3. Klik tombol "Hentikan Rekaman" untuk menyelesaikan perekaman.
+4. Putar ulang hasil rekaman atau unduh file berformat WAV langsung dari peramban.
+5. Klik "Hapus Rekaman" jika ingin menghapus hasil sebelumnya dan memulai sesi baru.
 
-### Uploading Custom Samples
+### Mengunggah Sampel Kustom
 
-1. In the "Upload Sampel Audio" section, select the note you wish to replace from the dropdown.
-2. Click "Pilih atau seret file" and select a WAV, MP3, OGG, or FLAC file.
-3. The sample is uploaded to the backend and cached in memory.
-4. The next time you play that note, the custom sample plays instead of synthesized audio.
-5. To return to synthesis, reload the page (samples are per-session).
+1. Pada bagian "Upload Sampel Audio", pilih nada yang ingin diganti dari dropdown menu.
+2. Klik tombol "Pilih atau seret file" lalu pilih file WAV, MP3, OGG, atau FLAC Anda.
+3. Sampel audio akan diunggah ke backend dan disimpan sementara dalam memori.
+4. Nada tersebut akan menggunakan sampel baru Anda saat dimainkan, menggantikan suara sintesis.
+5. Muat ulang halaman peramban untuk kembali menggunakan suara sintesis standar.
 
-### Default Samples (Optional)
+### Sampel Default (Opsional)
 
-To set up default samples:
+Untuk mengatur sampel bawaan pada server:
 
-1. Create directory structure in `api/samples/`:
+1. Siapkan struktur folder di dalam `api/samples/`:
 
    ```text
    api/samples/
@@ -226,85 +226,82 @@ To set up default samples:
    │   └── Pak Pinggir · Belakang.wav
    └── suling/
        ├── 1 Do.wav, 3 Mi.wav, 4 Fa.wav, 5 Sol.wav, 7 Si.wav
-       └── 1 Do (octave).wav
+       └── 1 Do (oktaf).wav
    ```
 
-2. Backend automatically loads samples on startup.
-3. Samples are cached in memory for fast playback.
-4. If a sample is not available, the synthesizer falls back to procedural synthesis.
+2. Server backend akan memuat sampel ini secara otomatis saat startup.
+3. Sampel akan disimpan dalam memori cache untuk mempercepat akses pemutaran.
+4. Jika file sampel tidak ditemukan, sintetisator akan otomatis beralih menggunakan sintesis prosedural.
 
-## Deployment
+## Penyebaran
 
-### Vercel (Recommended)
+### Vercel (Direkomendasikan)
 
-The project is preconfigured for serverless deployment on Vercel.
+Proyek ini telah dikonfigurasi untuk penyebaran tanpa server (serverless) di Vercel.
 
-1. Push your repository to GitHub.
-2. Connect the repository to Vercel via the Vercel dashboard.
-3. Vercel automatically detects the build configuration and deploys both frontend and backend.
-4. The application is accessible at your Vercel project URL.
+1. Unggah repositori Anda ke GitHub.
+2. Hubungkan repositori tersebut melalui dasbor Vercel.
+3. Vercel secara otomatis mendeteksi konfigurasi dan menyebarkan frontend serta backend Anda.
+4. Aplikasi dapat diakses langsung melalui URL proyek Vercel Anda.
 
-### Self-Hosted
+### Hosting Mandiri
 
-To run on your own server:
+Untuk menjalankan aplikasi pada server mandiri:
 
-1. Build the frontend: `npm run build`
-2. Deploy the `dist/` folder as a static website.
-3. Run the backend as a Python application:
+1. Bangun proyek frontend: `npm run build`
+2. Sebarkan folder `dist/` sebagai situs web statis di server web Anda.
+3. Jalankan backend Python menggunakan perintah:
 
    ```bash
    python -m uvicorn api.index:app --host 0.0.0.0 --port 8000
    ```
 
-## Browser Compatibility
+## Kompatibilitas Peramban
 
-- **Chrome/Chromium** — Full support
-- **Firefox** — Full support
-- **Safari 14+** — Full support
-- **Edge** — Full support
+- **Chrome / Chromium** — Didukung penuh
+- **Firefox** — Didukung penuh
+- **Safari 14+** — Didukung penuh
+- **Edge** — Didukung penuh
 
-Requires Web Audio API support and JavaScript enabled.
+Aplikasi memerlukan dukungan Web Audio API dan JavaScript yang aktif pada peramban.
 
-## Performance
+## Kinerja
 
-The Web Audio API frontend provides instant, zero-latency audio synthesis directly in the browser. The application has been tested on modern desktop and tablet browsers and maintains smooth performance during normal use with simultaneous synthesis and recording. Synthesis, recording, and parameter changes all respond immediately without network round-trip delay.
+Web Audio API pada frontend menyediakan sintesis audio instan tanpa latensi secara langsung di peramban. Aplikasi ini telah diuji pada peramban desktop dan tablet modern, menunjukkan performa stabil saat memainkan beberapa instrumen sekaligus sembari melakukan perekaman. Semua respons tombol dan pemutaran nada bekerja tanpa jeda transmisi jaringan.
 
-The optional backend synthesis (for advanced workflows) typically completes within 50-200ms depending on system load and NumPy/SciPy compilation overhead.
+Sintesis backend opsional (untuk pemrosesan lanjutan) umumnya diselesaikan dalam waktu 50 hingga 200 ms, tergantung pada beban server serta kecepatan kompilasi pustaka NumPy dan SciPy.
 
-## Troubleshooting
+## Pemecahan Masalah
 
-**No sound output** — Verify Web Audio API is supported in your browser. The browser may require user interaction to initialize the audio context. Click any instrument once to enable audio. Check browser console for errors. Ensure JavaScript is enabled.
+**Tidak ada suara yang keluar** — Periksa apakah peramban Anda mendukung Web Audio API. Peramban modern umumnya meminta interaksi pengguna pertama kali sebelum mengizinkan pemutaran audio. Klik sekali pada salah satu bagian instrumen untuk mengaktifkan konteks audio. Periksa log konsol peramban untuk melihat kesalahan yang terjadi.
 
-**Recording not working** — The browser may be preventing audio recording due to security restrictions. This is typically browser/OS specific. Verify that microphone permissions are allowed (even though the application does not use microphone input).
+**Fungsi perekaman tidak berjalan** — Beberapa peramban membatasi perekaman audio karena alasan keamanan. Pastikan izin akses audio telah diizinkan pada pengaturan peramban Anda.
 
-**Sample upload fails** — Ensure the file is in a supported format (WAV, MP3, OGG, FLAC) and that a note is selected in the dropdown before uploading. If backend sample playback is desired, ensure the backend API is running and accessible at `/api/samples/`.
+**Gagal mengunggah sampel** — Pastikan format file didukung (WAV, MP3, OGG, atau FLAC) dan pastikan nada telah dipilih di dropdown menu sebelum mengunggah file. Pastikan server backend berjalan pada rute `/api/samples/` jika ingin memutar sampel sisi server.
 
-**Audio permission issues** — Browsers require user interaction to enable Web Audio API. Click any instrument once to initialize the audio context.
+**Layanan backend tidak merespons** — Jika Anda menggunakan sintesis sisi server, periksa kembali apakah server uvicorn telah aktif menggunakan perintah `python -m uvicorn api.index:app --host 0.0.0.0 --port 8000`. Saat pertama kali dijalankan di Vercel, fungsi serverless mungkin membutuhkan beberapa detik tambahan untuk inisialisasi awal (cold start).
 
-**Backend synthesis endpoint not responding** — If using the backend for advanced synthesis, verify the API is running via `python -m uvicorn api/index:app --host 0.0.0.0 --port 8000`. Cold starts on Vercel may cause brief delays on the first request.
+## Pengembangan Masa Depan
 
-## Future Enhancements
+Beberapa rencana pengembangan fitur selanjutnya:
 
-Potential directions for expansion:
+- Dukungan input instrumen MIDI untuk kontroler eksternal.
+- Sistem preset untuk menyimpan dan memuat konfigurasi suara instrumen.
+- Penggabungan beberapa instrumen dan fitur pengurut nada (sequencer).
+- Peningkatan sensitivitas gestur sentuhan untuk perangkat seluler.
+- Penambahan instrumen gamelan Bali lainnya seperti Reyong dan Ugal.
+- Analisis spektral dan visualisasi bentuk gelombang secara waktu nyata.
+- Peningkatan kualitas pemrosesan sampel suara dengan pemrosesan spektral.
 
-- MIDI input support for external controllers
-- Preset system for saving and loading instrument configurations
-- Multi-instrument layering and sequencing
-- Touch gesture support for mobile devices
-- Additional Balinese instruments (Reyong, Ugal, etc.)
-- Spectral analysis and visualization
-- Client-side synthesis option for zero-latency playback
-- Improved sample quality with spectral processing
+## Kredit
 
-## Credits
-
-Gamelan Bali Synthesizer — Kelompok 1 (Group 1)
-Program Studi Teknik Informatika (Department of Computer Science)
-FMIPA Universitas Udayana (Faculty of Mathematics and Natural Sciences, Udayana University)
+Gamelan Bali Synthesizer — Kelompok 1
+Program Studi Teknik Informatika
+Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana
 2026
 
-Built with Vue.js 3, Vite, FastAPI, NumPy, and SciPy.
+Dibangun dengan memanfaatkan Vue.js 3, Vite, FastAPI, NumPy, dan SciPy.
 
-## License
+## Lisensi
 
-This project is provided as-is for educational and academic purposes.
+Proyek ini disediakan apa adanya untuk kepentingan akademis, penelitian, dan pembelajaran edukatif.

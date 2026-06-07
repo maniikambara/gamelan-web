@@ -42,7 +42,7 @@ def setup_samples_structure():
             "4 Fa.wav",
             "5 Sol.wav",
             "7 Si.wav",
-            "1 Do (octave).wav",
+            "1 Do (oktaf).wav",
         ]
     }
     

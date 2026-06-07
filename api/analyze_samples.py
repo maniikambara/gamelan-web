@@ -47,7 +47,7 @@ INSTRUMENTS = {
         "Pak Pinggir · Belakang",
     ],
     "suling": [
-        "1 Do", "3 Mi", "4 Fa", "5 Sol", "7 Si", "1 Do (octave)",
+        "1 Do", "3 Mi", "4 Fa", "5 Sol", "7 Si", "1 Do (oktaf)",
     ],
 }
 
@@ -717,7 +717,7 @@ def main():
                 note.replace('²', '2'),
                 note.replace(' · ', ' - '),
                 note.replace(' · ', '_'),
-                note.replace(' (octave)', '_oct'),
+                note.replace(' (oktaf)', '_oct'),
             ]
             candidates = []
             for name in name_variants:

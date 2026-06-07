@@ -23,7 +23,7 @@ try {
   const app = document.getElementById('app')
   if (app) {
     app.innerHTML = `<div style="padding: 2rem; color: red; font-family: monospace;">
-      <h2>Application Error</h2>
+      <h2>Kesalahan Aplikasi</h2>
       <p>${err.message}</p>
       <pre>${err.stack}</pre>
     </div>`
