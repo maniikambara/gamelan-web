@@ -37,17 +37,18 @@ warnings.filterwarnings("ignore", category=wavfile.WavFileWarning)
 SAMPLE_RATE_TARGET = 44100
 INSTRUMENTS = {
     "gangsa": [
-        "Ding", "Dong", "Deng", "Deung", "Dung",
-        "Dang", "Daing", "Ding²", "Dong²", "Deng²",
+        "Dong", "Deng", "Dung", "Dang", "Ding",
+        "Dong'", "Deng'", "Dung'", "Dang'", "Ding'",
     ],
     "kendang": [
-        "Tung Tengah · Muka",
-        "Pak Pinggir · Muka",
-        "Tung Tengah · Belakang",
-        "Pak Pinggir · Belakang",
+        "Tut_muka",
+        "Pak_muka",
+        "Dag_belakang",
+        "Dug_belakang",
     ],
     "suling": [
-        "1 Do", "3 Mi", "4 Fa", "5 Sol", "7 Si", "1 Do (oktaf)",
+        "Deng 1", "Dung 1", "Dang 1", "Ding 1", "Dong 1",
+        "Deng 2", "Dung 2", "Dang 2", "Ding 2", "Dong 2",
     ],
 }
 
@@ -55,7 +56,7 @@ INSTRUMENTS = {
 F0_BOUNDS = {
     "gangsa":  (200,  800),
     "kendang": ( 50,  300),
-    "suling":  (400, 1200),
+    "suling":  (200, 2000),
 }
 
 
@@ -793,8 +794,10 @@ def main():
         for note, data in inst_data.items():
             adsr = data.get("adsr", {})
             ombak_str = f"  ombak={data['ombak_hz']}Hz" if "ombak_hz" in data else ""
+            f0 = data.get('f0_hz')
+            f0_str = str(f0) if f0 is not None else "?"
             print(f"    {note:<35}  "
-                  f"F0={data.get('f0_hz','?'):>7}Hz  "
+                  f"F0={f0_str:>7}Hz  "
                   f"att={adsr.get('attack_ms','?'):>5}ms  "
                   f"rel={adsr.get('release_ms','?'):>6}ms"
                   f"{ombak_str}")

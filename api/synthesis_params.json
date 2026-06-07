@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-04T16:08:57",
+  "generated_at": "2026-06-07T20:42:13",
   "instruments": {
     "gangsa": {
-      "Ding": {
-        "note": "Ding",
-        "file": "Ding.wav",
+      "Dong": {
+        "note": "Dong",
+        "file": "Dong.wav",
         "duration_s": 4.303,
         "f0_hz": 301.81,
         "adsr": {
@@ -80,9 +80,9 @@
         "harmonic_decay_rate": 0.1321,
         "ombak_hz": 4.04
       },
-      "Dong": {
-        "note": "Dong",
-        "file": "Dong.wav",
+      "Deng": {
+        "note": "Deng",
+        "file": "Deng.wav",
         "duration_s": 3.457,
         "f0_hz": 334.1,
         "adsr": {
@@ -162,9 +162,9 @@
         "harmonic_decay_rate": 0.1344,
         "ombak_hz": 12.79
       },
-      "Deng": {
-        "note": "Deng",
-        "file": "Deng.wav",
+      "Dung": {
+        "note": "Dung",
+        "file": "Dung.wav",
         "duration_s": 4.274,
         "f0_hz": 417.19,
         "adsr": {
@@ -238,9 +238,9 @@
         "harmonic_decay_rate": 0.366,
         "ombak_hz": 1.01
       },
-      "Deung": {
-        "note": "Deung",
-        "file": "Deung.wav",
+      "Dang": {
+        "note": "Dang",
+        "file": "Dang.wav",
         "duration_s": 3.957,
         "f0_hz": 444.53,
         "adsr": {
@@ -316,9 +316,9 @@
         "harmonic_decay_rate": 0.2322,
         "ombak_hz": 10.43
       },
-      "Dung": {
-        "note": "Dung",
-        "file": "Dung.wav",
+      "Ding": {
+        "note": "Ding",
+        "file": "Ding.wav",
         "duration_s": 5.562,
         "f0_hz": 248.01,
         "adsr": {
@@ -391,9 +391,9 @@
         "inharmonicity": 42.7,
         "harmonic_decay_rate": 0.0
       },
-      "Dang": {
-        "note": "Dang",
-        "file": "Dang.wav",
+      "Dong'": {
+        "note": "Dong'",
+        "file": "Dong'.wav",
         "duration_s": 5.12,
         "f0_hz": 597.12,
         "adsr": {
@@ -466,9 +466,9 @@
         "inharmonicity": 50.7,
         "harmonic_decay_rate": 0.3464
       },
-      "Daing": {
-        "note": "Daing",
-        "file": "Daing.wav",
+      "Deng'": {
+        "note": "Deng'",
+        "file": "Deng'.wav",
         "duration_s": 5.774,
         "f0_hz": 312.14,
         "adsr": {
@@ -544,9 +544,9 @@
         "harmonic_decay_rate": 0.0,
         "ombak_hz": 1.01
       },
-      "Ding²": {
-        "note": "Ding²",
-        "file": "Ding².wav",
+      "Dung'": {
+        "note": "Dung'",
+        "file": "Dung'.wav",
         "duration_s": 6.611,
         "f0_hz": 268.03,
         "adsr": {
@@ -619,9 +619,9 @@
         "inharmonicity": 63.4,
         "harmonic_decay_rate": 0.1713
       },
-      "Dong²": {
-        "note": "Dong²",
-        "file": "Dong².wav",
+      "Dang'": {
+        "note": "Dang'",
+        "file": "Dang'.wav",
         "duration_s": 6.255,
         "f0_hz": 303.87,
         "adsr": {
@@ -693,9 +693,9 @@
         "harmonic_decay_rate": 0.2877,
         "ombak_hz": 1.01
       },
-      "Deng²": {
-        "note": "Deng²",
-        "file": "Deng².wav",
+      "Ding'": {
+        "note": "Ding'",
+        "file": "Ding'.wav",
         "duration_s": 5.423,
         "f0_hz": 341.42,
         "adsr": {
@@ -770,94 +770,94 @@
       }
     },
     "kendang": {
-      "Tung Tengah · Muka": {
-        "note": "Tung Tengah · Muka",
-        "file": "Tung Tengah · Muka.wav",
+      "Tut_muka": {
+        "note": "Tut_muka",
+        "file": "Tut_muka.wav",
         "duration_s": 1.846,
-        "f0_hz": 148.04,
+        "f0_hz": 78.13,
         "adsr": {
-          "attack_ms": 5.0,
-          "decay_ms": 27.4,
-          "sustain": 0.4,
-          "release_ms": 501.4
+          "attack_ms": 2.5,
+          "decay_ms": 15.0,
+          "sustain": 0.2,
+          "release_ms": 261.9
         },
         "harmonics": [
           {
             "n": 1,
-            "ratio": 1.0318,
+            "ratio": 0.9991,
             "amplitude_rel": 1.0,
-            "inharmonicity_cents": 54.2
+            "inharmonicity_cents": -1.6
           },
           {
             "n": 2,
-            "ratio": 1.9091,
-            "amplitude_rel": 0.6259,
-            "inharmonicity_cents": -80.5
+            "ratio": 1.9551,
+            "amplitude_rel": 3.5867,
+            "inharmonicity_cents": -39.3
           },
           {
             "n": 3,
-            "ratio": 2.8773,
-            "amplitude_rel": 0.3009,
-            "inharmonicity_cents": -72.3
+            "ratio": 2.8423,
+            "amplitude_rel": 2.7661,
+            "inharmonicity_cents": -93.5
           },
           {
             "n": 4,
-            "ratio": 4.1273,
-            "amplitude_rel": 0.1304,
-            "inharmonicity_cents": 54.2
+            "ratio": 3.8672,
+            "amplitude_rel": 0.7949,
+            "inharmonicity_cents": -58.4
           },
           {
             "n": 5,
-            "ratio": 4.7682,
-            "amplitude_rel": 0.0334,
-            "inharmonicity_cents": -82.2
+            "ratio": 5.1161,
+            "amplitude_rel": 0.2963,
+            "inharmonicity_cents": 39.7
           },
           {
             "n": 6,
-            "ratio": 5.7818,
-            "amplitude_rel": 0.0426,
-            "inharmonicity_cents": -64.1
+            "ratio": 5.8482,
+            "amplitude_rel": 0.539,
+            "inharmonicity_cents": -44.4
           },
           {
             "n": 7,
-            "ratio": 7.2909,
-            "amplitude_rel": 0.0276,
-            "inharmonicity_cents": 70.5
+            "ratio": 6.9937,
+            "amplitude_rel": 0.3584,
+            "inharmonicity_cents": -1.6
           },
           {
             "n": 8,
-            "ratio": 7.6364,
-            "amplitude_rel": 0.0362,
-            "inharmonicity_cents": -80.5
+            "ratio": 7.6052,
+            "amplitude_rel": 0.2401,
+            "inharmonicity_cents": -87.6
           }
         ],
         "synth_ratios": [
-          1.0045,
-          1.0318,
-          1.7636,
-          1.7909,
-          1.8318,
-          1.8682,
-          1.9091,
-          2.5591
+          1.4039,
+          1.6278,
+          1.7312,
+          1.9035,
+          1.9293,
+          1.9551,
+          2.7734,
+          2.8423
         ],
         "synth_amps": [
-          0.2453,
-          0.2988,
+          0.5975,
+          0.5035,
+          0.5198,
+          0.5425,
+          0.5921,
           1.0,
-          0.703,
-          0.3123,
-          0.4127,
-          0.187,
-          0.1955
+          0.5337,
+          0.7712
         ],
-        "centroid_hz": 604.5,
-        "inharmonicity": 72.1,
-        "harmonic_decay_rate": 0.5484
+        "centroid_hz": 552.5,
+        "inharmonicity": 52.1,
+        "harmonic_decay_rate": 0.3262
       },
-      "Pak Pinggir · Muka": {
-        "note": "Pak Pinggir · Muka",
-        "file": "Pak Pinggir · Muka.wav",
+      "Pak_muka": {
+        "note": "Pak_muka",
+        "file": "Pak_muka.wav",
         "duration_s": 1.846,
         "f0_hz": 203.91,
         "adsr": {
@@ -940,9 +940,94 @@
         "inharmonicity": 61.8,
         "harmonic_decay_rate": 0.3505
       },
-      "Tung Tengah · Belakang": {
-        "note": "Tung Tengah · Belakang",
-        "file": "Tung Tengah · Belakang.wav",
+      "Dag_belakang": {
+        "note": "Dag_belakang",
+        "file": "Dag_belakang.wav",
+        "duration_s": 1.846,
+        "f0_hz": 148.04,
+        "adsr": {
+          "attack_ms": 5.0,
+          "decay_ms": 27.4,
+          "sustain": 0.4,
+          "release_ms": 501.4
+        },
+        "harmonics": [
+          {
+            "n": 1,
+            "ratio": 1.0318,
+            "amplitude_rel": 1.0,
+            "inharmonicity_cents": 54.2
+          },
+          {
+            "n": 2,
+            "ratio": 1.9091,
+            "amplitude_rel": 0.6259,
+            "inharmonicity_cents": -80.5
+          },
+          {
+            "n": 3,
+            "ratio": 2.8773,
+            "amplitude_rel": 0.3009,
+            "inharmonicity_cents": -72.3
+          },
+          {
+            "n": 4,
+            "ratio": 4.1273,
+            "amplitude_rel": 0.1304,
+            "inharmonicity_cents": 54.2
+          },
+          {
+            "n": 5,
+            "ratio": 4.7682,
+            "amplitude_rel": 0.0334,
+            "inharmonicity_cents": -82.2
+          },
+          {
+            "n": 6,
+            "ratio": 5.7818,
+            "amplitude_rel": 0.0426,
+            "inharmonicity_cents": -64.1
+          },
+          {
+            "n": 7,
+            "ratio": 7.2909,
+            "amplitude_rel": 0.0276,
+            "inharmonicity_cents": 70.5
+          },
+          {
+            "n": 8,
+            "ratio": 7.6364,
+            "amplitude_rel": 0.0362,
+            "inharmonicity_cents": -80.5
+          }
+        ],
+        "synth_ratios": [
+          1.0045,
+          1.0318,
+          1.7636,
+          1.7909,
+          1.8318,
+          1.8682,
+          1.9091,
+          2.5591
+        ],
+        "synth_amps": [
+          0.2453,
+          0.2988,
+          1.0,
+          0.703,
+          0.3123,
+          0.4127,
+          0.187,
+          0.1955
+        ],
+        "centroid_hz": 604.5,
+        "inharmonicity": 72.1,
+        "harmonic_decay_rate": 0.5484
+      },
+      "Dug_belakang": {
+        "note": "Dug_belakang",
+        "file": "Dug_belakang.wav",
         "duration_s": 1.846,
         "f0_hz": 83.44,
         "adsr": {
@@ -1024,93 +1109,799 @@
         "centroid_hz": 553.8,
         "inharmonicity": 52.0,
         "harmonic_decay_rate": 0.4997
-      },
-      "Pak Pinggir · Belakang": {
-        "note": "Pak Pinggir · Belakang",
-        "file": "Pak Pinggir · Belakang.wav",
-        "duration_s": 1.846,
-        "f0_hz": 78.13,
+      }
+    },
+    "suling": {
+      "Deng 1": {
+        "note": "Deng 1",
+        "file": "Deng 1.wav",
+        "duration_s": 4.5,
+        "f0_hz": 317.73,
         "adsr": {
-          "attack_ms": 2.5,
-          "decay_ms": 15.0,
-          "sustain": 0.2,
-          "release_ms": 261.9
+          "attack_ms": 256.9,
+          "decay_ms": 10.0,
+          "sustain": 0.8,
+          "release_ms": 3369.8
         },
         "harmonics": [
           {
             "n": 1,
-            "ratio": 0.9991,
+            "ratio": 1.0039,
             "amplitude_rel": 1.0,
-            "inharmonicity_cents": -1.6
+            "inharmonicity_cents": 6.7
           },
           {
             "n": 2,
-            "ratio": 1.9551,
-            "amplitude_rel": 3.5867,
-            "inharmonicity_cents": -39.3
+            "ratio": 2.0098,
+            "amplitude_rel": 0.0866,
+            "inharmonicity_cents": 8.5
           },
           {
             "n": 3,
-            "ratio": 2.8423,
-            "amplitude_rel": 2.7661,
-            "inharmonicity_cents": -93.5
+            "ratio": 3.0328,
+            "amplitude_rel": 0.2682,
+            "inharmonicity_cents": 18.8
           },
           {
             "n": 4,
-            "ratio": 3.8672,
-            "amplitude_rel": 0.7949,
-            "inharmonicity_cents": -58.4
+            "ratio": 4.0366,
+            "amplitude_rel": 0.0941,
+            "inharmonicity_cents": 15.8
           },
           {
             "n": 5,
-            "ratio": 5.1161,
-            "amplitude_rel": 0.2963,
-            "inharmonicity_cents": 39.7
+            "ratio": 5.0447,
+            "amplitude_rel": 0.1086,
+            "inharmonicity_cents": 15.4
           },
           {
             "n": 6,
-            "ratio": 5.8482,
-            "amplitude_rel": 0.539,
-            "inharmonicity_cents": -44.4
+            "ratio": 6.0507,
+            "amplitude_rel": 0.0155,
+            "inharmonicity_cents": 14.6
           },
           {
             "n": 7,
-            "ratio": 6.9937,
-            "amplitude_rel": 0.3584,
-            "inharmonicity_cents": -1.6
+            "ratio": 7.0567,
+            "amplitude_rel": 0.017,
+            "inharmonicity_cents": 14.0
           },
           {
             "n": 8,
-            "ratio": 7.6052,
-            "amplitude_rel": 0.2401,
-            "inharmonicity_cents": -87.6
+            "ratio": 8.0775,
+            "amplitude_rel": 0.0095,
+            "inharmonicity_cents": 16.7
           }
         ],
         "synth_ratios": [
-          1.4039,
-          1.6278,
-          1.7312,
-          1.9035,
-          1.9293,
-          1.9551,
-          2.7734,
-          2.8423
+          1.0039,
+          2.0098,
+          3.0328,
+          4.0366,
+          5.0447
         ],
         "synth_amps": [
-          0.5975,
-          0.5035,
-          0.5198,
-          0.5425,
-          0.5921,
           1.0,
-          0.5337,
-          0.7712
+          0.0866,
+          0.2682,
+          0.0941,
+          0.1086
         ],
-        "centroid_hz": 552.5,
-        "inharmonicity": 52.1,
-        "harmonic_decay_rate": 0.3262
+        "centroid_hz": 1657.4,
+        "inharmonicity": 14.8,
+        "harmonic_decay_rate": 0.5854
+      },
+      "Dung 1": {
+        "note": "Dung 1",
+        "file": "Dung 1.wav",
+        "duration_s": 4.851,
+        "f0_hz": 411.22,
+        "adsr": {
+          "attack_ms": 219.5,
+          "decay_ms": 1.0,
+          "sustain": 0.9,
+          "release_ms": 4335.1
+        },
+        "harmonics": [
+          {
+            "n": 1,
+            "ratio": 0.99,
+            "amplitude_rel": 1.0,
+            "inharmonicity_cents": -17.4
+          },
+          {
+            "n": 2,
+            "ratio": 1.9849,
+            "amplitude_rel": 0.2718,
+            "inharmonicity_cents": -13.1
+          },
+          {
+            "n": 3,
+            "ratio": 2.9749,
+            "amplitude_rel": 0.0798,
+            "inharmonicity_cents": -14.5
+          },
+          {
+            "n": 4,
+            "ratio": 3.9698,
+            "amplitude_rel": 0.0617,
+            "inharmonicity_cents": -13.1
+          },
+          {
+            "n": 5,
+            "ratio": 4.9631,
+            "amplitude_rel": 0.0683,
+            "inharmonicity_cents": -12.8
+          },
+          {
+            "n": 6,
+            "ratio": 5.9564,
+            "amplitude_rel": 0.052,
+            "inharmonicity_cents": -12.6
+          },
+          {
+            "n": 7,
+            "ratio": 6.9497,
+            "amplitude_rel": 0.0248,
+            "inharmonicity_cents": -12.5
+          },
+          {
+            "n": 8,
+            "ratio": 7.9413,
+            "amplitude_rel": 0.0145,
+            "inharmonicity_cents": -12.7
+          }
+        ],
+        "synth_ratios": [
+          0.99,
+          1.9849,
+          2.9749,
+          3.9698,
+          4.9631,
+          5.9564
+        ],
+        "synth_amps": [
+          1.0,
+          0.2718,
+          0.0798,
+          0.0617,
+          0.0683,
+          0.052
+        ],
+        "centroid_hz": 1946.1,
+        "inharmonicity": 13.1,
+        "harmonic_decay_rate": 0.5091
+      },
+      "Dang 1": {
+        "note": "Dang 1",
+        "file": "Dang 1.wav",
+        "duration_s": 4.183,
+        "f0_hz": 441.91,
+        "adsr": {
+          "attack_ms": 300.0,
+          "decay_ms": 7.5,
+          "sustain": 0.9,
+          "release_ms": 2102.7
+        },
+        "harmonics": [
+          {
+            "n": 1,
+            "ratio": 0.9867,
+            "amplitude_rel": 1.0,
+            "inharmonicity_cents": -23.1
+          },
+          {
+            "n": 2,
+            "ratio": 1.9857,
+            "amplitude_rel": 0.348,
+            "inharmonicity_cents": -12.5
+          },
+          {
+            "n": 3,
+            "ratio": 3.0059,
+            "amplitude_rel": 0.0421,
+            "inharmonicity_cents": 3.4
+          },
+          {
+            "n": 4,
+            "ratio": 3.9805,
+            "amplitude_rel": 0.2507,
+            "inharmonicity_cents": -8.5
+          },
+          {
+            "n": 5,
+            "ratio": 4.9657,
+            "amplitude_rel": 0.0358,
+            "inharmonicity_cents": -11.9
+          },
+          {
+            "n": 6,
+            "ratio": 5.9616,
+            "amplitude_rel": 0.0303,
+            "inharmonicity_cents": -11.1
+          },
+          {
+            "n": 7,
+            "ratio": 6.9635,
+            "amplitude_rel": 0.0369,
+            "inharmonicity_cents": -9.0
+          },
+          {
+            "n": 8,
+            "ratio": 7.8254,
+            "amplitude_rel": 0.0104,
+            "inharmonicity_cents": -38.2
+          }
+        ],
+        "synth_ratios": [
+          0.9867,
+          1.9857,
+          3.0059,
+          3.9805,
+          4.9657,
+          6.9635
+        ],
+        "synth_amps": [
+          1.0,
+          0.348,
+          0.0421,
+          0.2507,
+          0.0358,
+          0.0369
+        ],
+        "centroid_hz": 1508.0,
+        "inharmonicity": 13.5,
+        "harmonic_decay_rate": 0.5488
+      },
+      "Ding 1": {
+        "note": "Ding 1",
+        "file": "Ding 1.wav",
+        "duration_s": 5.12,
+        "f0_hz": 558.69,
+        "adsr": {
+          "attack_ms": 300.0,
+          "decay_ms": 5.0,
+          "sustain": 0.9,
+          "release_ms": 548.8
+        },
+        "harmonics": [
+          {
+            "n": 1,
+            "ratio": 0.9877,
+            "amplitude_rel": 1.0,
+            "inharmonicity_cents": -21.5
+          },
+          {
+            "n": 2,
+            "ratio": 1.9404,
+            "amplitude_rel": 0.03,
+            "inharmonicity_cents": -52.4
+          },
+          {
+            "n": 3,
+            "ratio": 2.9714,
+            "amplitude_rel": 0.0347,
+            "inharmonicity_cents": -16.6
+          },
+          {
+            "n": 4,
+            "ratio": 3.8603,
+            "amplitude_rel": 0.0239,
+            "inharmonicity_cents": -61.6
+          },
+          {
+            "n": 5,
+            "ratio": 4.8503,
+            "amplitude_rel": 0.0332,
+            "inharmonicity_cents": -52.6
+          },
+          {
+            "n": 6,
+            "ratio": 5.9392,
+            "amplitude_rel": 0.0137,
+            "inharmonicity_cents": -17.6
+          },
+          {
+            "n": 7,
+            "ratio": 6.9268,
+            "amplitude_rel": 0.0223,
+            "inharmonicity_cents": -18.2
+          },
+          {
+            "n": 8,
+            "ratio": 7.9253,
+            "amplitude_rel": 0.0077,
+            "inharmonicity_cents": -16.2
+          }
+        ],
+        "synth_ratios": [
+          0.9877,
+          1.9404,
+          2.9714,
+          3.8603,
+          4.8503,
+          6.9268
+        ],
+        "synth_amps": [
+          1.0,
+          0.03,
+          0.0347,
+          0.0239,
+          0.0332,
+          0.0223
+        ],
+        "centroid_hz": 1739.5,
+        "inharmonicity": 33.6,
+        "harmonic_decay_rate": 0.4521
+      },
+      "Dong 1": {
+        "note": "Dong 1",
+        "file": "Dong 1.wav",
+        "duration_s": 4.822,
+        "f0_hz": 587.36,
+        "adsr": {
+          "attack_ms": 62.4,
+          "decay_ms": 1.0,
+          "sustain": 0.9,
+          "release_ms": 389.1
+        },
+        "harmonics": [
+          {
+            "n": 1,
+            "ratio": 0.9979,
+            "amplitude_rel": 1.0,
+            "inharmonicity_cents": -3.7
+          },
+          {
+            "n": 2,
+            "ratio": 2.0267,
+            "amplitude_rel": 0.0234,
+            "inharmonicity_cents": 22.9
+          },
+          {
+            "n": 3,
+            "ratio": 2.9959,
+            "amplitude_rel": 0.0188,
+            "inharmonicity_cents": -2.4
+          },
+          {
+            "n": 4,
+            "ratio": 4.0613,
+            "amplitude_rel": 0.0144,
+            "inharmonicity_cents": 26.3
+          },
+          {
+            "n": 5,
+            "ratio": 4.9973,
+            "amplitude_rel": 0.0116,
+            "inharmonicity_cents": -0.9
+          },
+          {
+            "n": 6,
+            "ratio": 5.9746,
+            "amplitude_rel": 0.0057,
+            "inharmonicity_cents": -7.4
+          },
+          {
+            "n": 7,
+            "ratio": 7.0217,
+            "amplitude_rel": 0.0055,
+            "inharmonicity_cents": 5.4
+          },
+          {
+            "n": 8,
+            "ratio": 7.9794,
+            "amplitude_rel": 0.003,
+            "inharmonicity_cents": -4.5
+          }
+        ],
+        "synth_ratios": [
+          0.9979,
+          2.0267
+        ],
+        "synth_amps": [
+          1.0,
+          0.0234
+        ],
+        "centroid_hz": 1722.6,
+        "inharmonicity": 10.0,
+        "harmonic_decay_rate": 0.6158
+      },
+      "Deng 2": {
+        "note": "Deng 2",
+        "file": "Deng 2.wav",
+        "duration_s": 4.519,
+        "f0_hz": 639.41,
+        "adsr": {
+          "attack_ms": 300.0,
+          "decay_ms": 5.0,
+          "sustain": 0.8,
+          "release_ms": 3729.0
+        },
+        "harmonics": [
+          {
+            "n": 1,
+            "ratio": 0.9998,
+            "amplitude_rel": 1.0,
+            "inharmonicity_cents": -0.4
+          },
+          {
+            "n": 2,
+            "ratio": 1.9964,
+            "amplitude_rel": 0.063,
+            "inharmonicity_cents": -3.1
+          },
+          {
+            "n": 3,
+            "ratio": 3.0078,
+            "amplitude_rel": 0.2275,
+            "inharmonicity_cents": 4.5
+          },
+          {
+            "n": 4,
+            "ratio": 4.0128,
+            "amplitude_rel": 0.0743,
+            "inharmonicity_cents": 5.5
+          },
+          {
+            "n": 5,
+            "ratio": 5.0136,
+            "amplitude_rel": 0.0774,
+            "inharmonicity_cents": 4.7
+          },
+          {
+            "n": 6,
+            "ratio": 6.0134,
+            "amplitude_rel": 0.0097,
+            "inharmonicity_cents": 3.9
+          },
+          {
+            "n": 7,
+            "ratio": 7.0132,
+            "amplitude_rel": 0.0106,
+            "inharmonicity_cents": 3.3
+          },
+          {
+            "n": 8,
+            "ratio": 8.0319,
+            "amplitude_rel": 0.0051,
+            "inharmonicity_cents": 6.9
+          }
+        ],
+        "synth_ratios": [
+          0.9998,
+          1.9964,
+          3.0078,
+          4.0128,
+          5.0136
+        ],
+        "synth_amps": [
+          1.0,
+          0.063,
+          0.2275,
+          0.0743,
+          0.0774
+        ],
+        "centroid_hz": 3065.3,
+        "inharmonicity": 4.5,
+        "harmonic_decay_rate": 0.659
+      },
+      "Dung 2": {
+        "note": "Dung 2",
+        "file": "Dung 2.wav",
+        "duration_s": 4.861,
+        "f0_hz": 818.46,
+        "adsr": {
+          "attack_ms": 214.5,
+          "decay_ms": 15.0,
+          "sustain": 0.9,
+          "release_ms": 4320.2
+        },
+        "harmonics": [
+          {
+            "n": 1,
+            "ratio": 0.9965,
+            "amplitude_rel": 1.0,
+            "inharmonicity_cents": -6.1
+          },
+          {
+            "n": 2,
+            "ratio": 2.0012,
+            "amplitude_rel": 0.195,
+            "inharmonicity_cents": 1.0
+          },
+          {
+            "n": 3,
+            "ratio": 2.9927,
+            "amplitude_rel": 0.0869,
+            "inharmonicity_cents": -4.2
+          },
+          {
+            "n": 4,
+            "ratio": 3.9924,
+            "amplitude_rel": 0.0587,
+            "inharmonicity_cents": -3.3
+          },
+          {
+            "n": 5,
+            "ratio": 4.9881,
+            "amplitude_rel": 0.052,
+            "inharmonicity_cents": -4.1
+          },
+          {
+            "n": 6,
+            "ratio": 5.9862,
+            "amplitude_rel": 0.0351,
+            "inharmonicity_cents": -4.0
+          },
+          {
+            "n": 7,
+            "ratio": 6.9851,
+            "amplitude_rel": 0.0212,
+            "inharmonicity_cents": -3.7
+          },
+          {
+            "n": 8,
+            "ratio": 7.9791,
+            "amplitude_rel": 0.0104,
+            "inharmonicity_cents": -4.5
+          }
+        ],
+        "synth_ratios": [
+          0.9965,
+          2.0012,
+          2.9927,
+          3.9924,
+          4.9881,
+          5.9862
+        ],
+        "synth_amps": [
+          1.0,
+          0.195,
+          0.0869,
+          0.0587,
+          0.052,
+          0.0351
+        ],
+        "centroid_hz": 3281.7,
+        "inharmonicity": 3.5,
+        "harmonic_decay_rate": 0.5465
+      },
+      "Dang 2": {
+        "note": "Dang 2",
+        "file": "Dang 2.wav",
+        "duration_s": 4.226,
+        "f0_hz": 883.44,
+        "adsr": {
+          "attack_ms": 300.0,
+          "decay_ms": 1.0,
+          "sustain": 1.0,
+          "release_ms": 2105.2
+        },
+        "harmonics": [
+          {
+            "n": 1,
+            "ratio": 0.9932,
+            "amplitude_rel": 1.0,
+            "inharmonicity_cents": -11.7
+          },
+          {
+            "n": 2,
+            "ratio": 1.9789,
+            "amplitude_rel": 0.2576,
+            "inharmonicity_cents": -18.4
+          },
+          {
+            "n": 3,
+            "ratio": 2.9935,
+            "amplitude_rel": 0.0365,
+            "inharmonicity_cents": -3.8
+          },
+          {
+            "n": 4,
+            "ratio": 3.9768,
+            "amplitude_rel": 0.2365,
+            "inharmonicity_cents": -10.1
+          },
+          {
+            "n": 5,
+            "ratio": 4.887,
+            "amplitude_rel": 0.024,
+            "inharmonicity_cents": -39.6
+          },
+          {
+            "n": 6,
+            "ratio": 5.9587,
+            "amplitude_rel": 0.0229,
+            "inharmonicity_cents": -11.9
+          },
+          {
+            "n": 7,
+            "ratio": 6.971,
+            "amplitude_rel": 0.0219,
+            "inharmonicity_cents": -7.2
+          },
+          {
+            "n": 8,
+            "ratio": 7.8256,
+            "amplitude_rel": 0.0109,
+            "inharmonicity_cents": -38.2
+          }
+        ],
+        "synth_ratios": [
+          0.9932,
+          1.9789,
+          2.9935,
+          3.9768,
+          4.887,
+          5.9587
+        ],
+        "synth_amps": [
+          1.0,
+          0.2576,
+          0.0365,
+          0.2365,
+          0.024,
+          0.0229
+        ],
+        "centroid_hz": 2628.4,
+        "inharmonicity": 18.4,
+        "harmonic_decay_rate": 0.5674
+      },
+      "Ding 2": {
+        "note": "Ding 2",
+        "file": "Ding 2.wav",
+        "duration_s": 5.077,
+        "f0_hz": 1082.27,
+        "adsr": {
+          "attack_ms": 300.0,
+          "decay_ms": 5.0,
+          "sustain": 0.9,
+          "release_ms": 551.2
+        },
+        "harmonics": [
+          {
+            "n": 1,
+            "ratio": 1.0191,
+            "amplitude_rel": 1.0,
+            "inharmonicity_cents": 32.7
+          },
+          {
+            "n": 2,
+            "ratio": 2.0008,
+            "amplitude_rel": 0.033,
+            "inharmonicity_cents": 0.7
+          },
+          {
+            "n": 3,
+            "ratio": 3.0609,
+            "amplitude_rel": 0.0415,
+            "inharmonicity_cents": 34.8
+          },
+          {
+            "n": 4,
+            "ratio": 3.9873,
+            "amplitude_rel": 0.02,
+            "inharmonicity_cents": -5.5
+          },
+          {
+            "n": 5,
+            "ratio": 5.03,
+            "amplitude_rel": 0.0291,
+            "inharmonicity_cents": 10.4
+          },
+          {
+            "n": 6,
+            "ratio": 6.1324,
+            "amplitude_rel": 0.0113,
+            "inharmonicity_cents": 37.8
+          },
+          {
+            "n": 7,
+            "ratio": 7.1515,
+            "amplitude_rel": 0.0146,
+            "inharmonicity_cents": 37.1
+          },
+          {
+            "n": 8,
+            "ratio": 8.1755,
+            "amplitude_rel": 0.0081,
+            "inharmonicity_cents": 37.6
+          }
+        ],
+        "synth_ratios": [
+          1.0191,
+          2.0008,
+          3.0609,
+          3.9873,
+          5.03
+        ],
+        "synth_amps": [
+          1.0,
+          0.033,
+          0.0415,
+          0.02,
+          0.0291
+        ],
+        "centroid_hz": 3239.0,
+        "inharmonicity": 23.4,
+        "harmonic_decay_rate": 0.4923
+      },
+      "Dong 2": {
+        "note": "Dong 2",
+        "file": "Dong 2.wav",
+        "duration_s": 4.817,
+        "f0_hz": 1169.81,
+        "adsr": {
+          "attack_ms": 300.0,
+          "decay_ms": 5.0,
+          "sustain": 0.9,
+          "release_ms": 2319.7
+        },
+        "harmonics": [
+          {
+            "n": 1,
+            "ratio": 1.0055,
+            "amplitude_rel": 1.0,
+            "inharmonicity_cents": 9.5
+          },
+          {
+            "n": 2,
+            "ratio": 2.0369,
+            "amplitude_rel": 0.0254,
+            "inharmonicity_cents": 31.7
+          },
+          {
+            "n": 3,
+            "ratio": 3.0027,
+            "amplitude_rel": 0.0289,
+            "inharmonicity_cents": 1.6
+          },
+          {
+            "n": 4,
+            "ratio": 4.0784,
+            "amplitude_rel": 0.0171,
+            "inharmonicity_cents": 33.6
+          },
+          {
+            "n": 5,
+            "ratio": 5.0385,
+            "amplitude_rel": 0.0122,
+            "inharmonicity_cents": 13.3
+          },
+          {
+            "n": 6,
+            "ratio": 5.9939,
+            "amplitude_rel": 0.0057,
+            "inharmonicity_cents": -1.8
+          },
+          {
+            "n": 7,
+            "ratio": 7.0598,
+            "amplitude_rel": 0.0071,
+            "inharmonicity_cents": 14.7
+          },
+          {
+            "n": 8,
+            "ratio": 8.0101,
+            "amplitude_rel": 0.0032,
+            "inharmonicity_cents": 2.2
+          }
+        ],
+        "synth_ratios": [
+          1.0055,
+          2.0369,
+          3.0027
+        ],
+        "synth_amps": [
+          1.0,
+          0.0254,
+          0.0289
+        ],
+        "centroid_hz": 3134.8,
+        "inharmonicity": 14.1,
+        "harmonic_decay_rate": 0.6172
       }
-    },
-    "suling": {}
+    }
   }
 }

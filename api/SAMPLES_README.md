@@ -6,28 +6,32 @@
 api/
 ├── samples/
 │   ├── gangsa/
-│   │   ├── Ding.wav
 │   │   ├── Dong.wav
 │   │   ├── Deng.wav
-│   │   ├── Deung.wav
 │   │   ├── Dung.wav
 │   │   ├── Dang.wav
-│   │   ├── Daing.wav
-│   │   ├── Ding².wav
-│   │   ├── Dong².wav
-│   │   └── Deng².wav
+│   │   ├── Ding.wav
+│   │   ├── Dong'.wav
+│   │   ├── Deng'.wav
+│   │   ├── Dung'.wav
+│   │   ├── Dang'.wav
+│   │   └── Ding'.wav
 │   ├── kendang/
-│   │   ├── Tung Tengah · Muka.wav
-│   │   ├── Pak Pinggir · Muka.wav
-│   │   ├── Tung Tengah · Belakang.wav
-│   │   └── Pak Pinggir · Belakang.wav
+│   │   ├── Tut_muka.wav
+│   │   ├── Pak_muka.wav
+│   │   ├── Dag_belakang.wav
+│   │   └── Dug_belakang.wav
 │   └── suling/
-│       ├── 1 Do.wav
-│       ├── 3 Mi.wav
-│       ├── 4 Fa.wav
-│       ├── 5 Sol.wav
-│       ├── 7 Si.wav
-│       └── 1 Do (oktaf).wav
+│       ├── Deng 1.wav
+│       ├── Dung 1.wav
+│       ├── Dang 1.wav
+│       ├── Ding 1.wav
+│       ├── Dong 1.wav
+│       ├── Deng 2.wav
+│       ├── Dung 2.wav
+│       ├── Dang 2.wav
+│       ├── Ding 2.wav
+│       └── Dong 2.wav
 ├── index.py
 └── SAMPLES_README.md (file ini)
 ```

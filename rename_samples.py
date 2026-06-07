@@ -10,12 +10,12 @@ gangsa_mapping = {
     "Dong": "Deng",
     "Deng": "Dung",
     "Deung": "Dang",
-    "Dung": "Ling",
+    "Dung": "Ding",
     "Dang": "Dong'",
     "Daing": "Deng'",
     "Ding²": "Dung'",
     "Dong²": "Dang'",
-    "Deng²": "Ding"
+    "Deng²": "Ding'"
 }
 
 print("Starting Gangsa rename...")
@@ -41,10 +41,10 @@ for old_stem, new_stem in gangsa_mapping.items():
 
 # Kendang renaming mapping
 kendang_mapping = {
-    "Tung Tengah · Muka": "Tut · Muka",
-    "Tung Tengah · Belakang": "Dag · Belakang",
-    "Pak Pinggir · Muka": "Pak · Muka",
-    "Pak Pinggir · Belakang": "Dug · Belakang"
+    "Tung Tengah · Muka": "Tut_muka",
+    "Tung Tengah · Belakang": "Dag_belakang",
+    "Pak Pinggir · Muka": "Pak_muka",
+    "Pak Pinggir · Belakang": "Dug_belakang"
 }
 
 print("\nStarting Kendang rename...")
