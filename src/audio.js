@@ -169,25 +169,50 @@ const _synthesizers = {
     const now = ctx.currentTime
     const f0  = noteParams?.f0_hz || baseFreq
     const adsr = noteParams?.adsr || { attack_ms: 100, decay_ms: 80, sustain: 0.88, release_ms: 600 }
-    const dur  = (adsr.release_ms / 1000) + 0.5
+    
+    // Gunakan durasi sampel asli (sekitar 4-6 detik), atau default ke 5 detik jika tidak ada
+    const dur  = noteParams?.duration_s || 5.0
     const breath = (userParams.breath ?? 0.18) * Math.sqrt(f0 / 558.0)
 
     const master = ctx.createGain()
     master.gain.setValueAtTime(0, now)
-    const attackSec = Math.max(0.005, (userParams.attack_ms ?? adsr.attack_ms) / 1000)
+    
+    // Slow, breathy attack typical for suling
+    const attackSec = Math.max(0.05, (userParams.attack_ms ?? adsr.attack_ms) / 1000)
     master.gain.linearRampToValueAtTime(userParams.gain || 0.7, now + attackSec)
-    master.gain.setTargetAtTime(0, now + dur * 0.8, dur * 0.15)
+    
+    // Sustain until the natural end of the sample duration
+    master.gain.setTargetAtTime(0, now + dur - 0.2, 0.15)
     master.connect(ctx.destination)
 
     const oscs = []
     const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
     const amps   = noteParams?.synth_amps   || [1.0, 0.22, 0.05]
 
+    // Vibrato (Suling Bali has very strong, expressive vibrato)
+    const vibratoOsc = ctx.createOscillator()
+    vibratoOsc.type = 'sine'
+    vibratoOsc.frequency.value = 5.5 // ~5.5 Hz rate
+    const vibratoGain = ctx.createGain()
+    vibratoGain.gain.value = f0 * 0.012 // ~1.2% depth
+    vibratoOsc.connect(vibratoGain)
+    vibratoOsc.start(now)
+    vibratoOsc.stop(now + dur + 0.5)
+    oscs.push(vibratoOsc)
+
     ratios.forEach((r, i) => {
       const amp = amps[i] || 0
       if (amp < 0.001) return
       const osc = ctx.createOscillator(); const g = ctx.createGain()
-      osc.type = 'sine'; osc.frequency.value = f0 * r
+      osc.type = 'sine'; 
+      osc.frequency.value = f0 * r
+      
+      // Connect vibrato to each harmonic, scaled by its ratio so it stays in tune
+      const harmonicVibGain = ctx.createGain()
+      harmonicVibGain.gain.value = r
+      vibratoGain.connect(harmonicVibGain)
+      harmonicVibGain.connect(osc.frequency)
+
       g.gain.value = amp
       osc.connect(g); g.connect(master)
       osc.start(now); osc.stop(now + dur + 0.5)
@@ -301,9 +326,7 @@ export class AudioEngine {
       for (const activeKey in this.activeSources) {
         if (activeKey.startsWith('suling/')) {
           const prevNoteName = activeKey.split('/')[1]
-          if (prevNoteName !== noteName) {
-            this.muteNote('suling', prevNoteName)
-          }
+          this.muteNote('suling', prevNoteName)
         }
       }
     }

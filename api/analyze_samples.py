@@ -587,7 +587,7 @@ def analyze_note(wav_path: Path, instrument: str, note_name: str,
     adsr = measure_adsr(signal, sr)
 
     # ── Harmonics ─────────────────────────────────────────────────
-    n_harm = 12 if instrument == "gangsa" else 8
+    n_harm = 16
     harmonics = analyze_harmonics(signal, sr, f0, n_harm) if f0 > 0 else []
 
     # For inharmonic instruments (gangsa, kendang), use peak-based detection
@@ -595,12 +595,12 @@ def analyze_note(wav_path: Path, instrument: str, note_name: str,
     # For suling (near-harmonic), fall back to integer-harmonic analysis.
     if f0 > 0:
         if instrument in ("gangsa", "kendang"):
-            ratios, amps = find_spectral_partials(signal, sr, f0, n_partials=8)
+            ratios, amps = find_spectral_partials(signal, sr, f0, n_partials=12)
         else:
-            ratios, amps = harmonic_partials_for_synth(harmonics, n_keep=6)
+            ratios, amps = harmonic_partials_for_synth(harmonics, n_keep=12)
             # If integer analysis found nothing meaningful, use peak detection
             if len(ratios) <= 1:
-                ratios, amps = find_spectral_partials(signal, sr, f0, n_partials=6)
+                ratios, amps = find_spectral_partials(signal, sr, f0, n_partials=12)
     else:
         ratios, amps = [1.0], [1.0]
 
