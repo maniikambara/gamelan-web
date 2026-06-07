@@ -52,7 +52,6 @@ Frontend VueJS dirancang sebagai aplikasi satu halaman berbasis komponen yang me
 5. Komponen Instrumen meliputi GangsaPanel, KendangPanel, dan SulingPanel yang mengimplementasikan interaksi pengguna. SulingPanel menampilkan sepuluh tombol nada dan visualisasi lubang yang ditutup.
 6. SettingsPanel.vue memuat pengaturan parameter audio.
 7. RecordingPanel.vue memuat kontrol perekaman dan pemutaran.
-8. SampleUpload.vue menyediakan antarmuka unggah untuk file sampel.
 
 ### Backend Python FastAPI
 

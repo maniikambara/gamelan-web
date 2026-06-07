@@ -296,6 +296,18 @@ export class AudioEngine {
     this.resume()
     const key = `${instrument}/${noteName}`
     
+    // Suling is monophonic: mute any currently playing suling note
+    if (instrument === 'suling') {
+      for (const activeKey in this.activeSources) {
+        if (activeKey.startsWith('suling/')) {
+          const prevNoteName = activeKey.split('/')[1]
+          if (prevNoteName !== noteName) {
+            this.muteNote('suling', prevNoteName)
+          }
+        }
+      }
+    }
+
     // Look up specific note parameters if available
     const noteParams = this.synthParams[instrument]?.[noteName]
 
