@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-07T20:42:13",
+  "generated_at": "2026-06-07T20:55:33",
   "instruments": {
     "gangsa": {
       "Dong": {
@@ -76,8 +76,8 @@
           0.0496
         ],
         "centroid_hz": 2185.2,
-        "inharmonicity": 63.0,
-        "harmonic_decay_rate": 0.1321,
+        "inharmonicity": 51.5,
+        "harmonic_decay_rate": 0.1701,
         "ombak_hz": 4.04
       },
       "Deng": {
@@ -158,8 +158,8 @@
           0.3359
         ],
         "centroid_hz": 2855.6,
-        "inharmonicity": 62.5,
-        "harmonic_decay_rate": 0.1344,
+        "inharmonicity": 63.9,
+        "harmonic_decay_rate": 0.1208,
         "ombak_hz": 12.79
       },
       "Dung": {
@@ -234,8 +234,8 @@
           0.084
         ],
         "centroid_hz": 1953.1,
-        "inharmonicity": 34.7,
-        "harmonic_decay_rate": 0.366,
+        "inharmonicity": 37.9,
+        "harmonic_decay_rate": 0.2411,
         "ombak_hz": 1.01
       },
       "Dang": {
@@ -312,8 +312,8 @@
           0.1
         ],
         "centroid_hz": 3090.9,
-        "inharmonicity": 40.3,
-        "harmonic_decay_rate": 0.2322,
+        "inharmonicity": 47.3,
+        "harmonic_decay_rate": 0.0468,
         "ombak_hz": 10.43
       },
       "Ding": {
@@ -388,8 +388,8 @@
           0.0851
         ],
         "centroid_hz": 2530.5,
-        "inharmonicity": 42.7,
-        "harmonic_decay_rate": 0.0
+        "inharmonicity": 47.3,
+        "harmonic_decay_rate": 0.0207
       },
       "Dong'": {
         "note": "Dong'",
@@ -463,8 +463,8 @@
           0.0507
         ],
         "centroid_hz": 2981.8,
-        "inharmonicity": 50.7,
-        "harmonic_decay_rate": 0.3464
+        "inharmonicity": 50.4,
+        "harmonic_decay_rate": 0.2101
       },
       "Deng'": {
         "note": "Deng'",
@@ -540,8 +540,8 @@
           0.157
         ],
         "centroid_hz": 2492.5,
-        "inharmonicity": 57.4,
-        "harmonic_decay_rate": 0.0,
+        "inharmonicity": 50.9,
+        "harmonic_decay_rate": 0.1134,
         "ombak_hz": 1.01
       },
       "Dung'": {
@@ -616,8 +616,8 @@
           0.0502
         ],
         "centroid_hz": 2851.2,
-        "inharmonicity": 63.4,
-        "harmonic_decay_rate": 0.1713
+        "inharmonicity": 59.2,
+        "harmonic_decay_rate": 0.012
       },
       "Dang'": {
         "note": "Dang'",
@@ -689,8 +689,8 @@
           0.0722
         ],
         "centroid_hz": 2322.9,
-        "inharmonicity": 46.8,
-        "harmonic_decay_rate": 0.2877,
+        "inharmonicity": 52.8,
+        "harmonic_decay_rate": 0.1677,
         "ombak_hz": 1.01
       },
       "Ding'": {
@@ -765,8 +765,8 @@
           0.0669
         ],
         "centroid_hz": 3317.6,
-        "inharmonicity": 36.0,
-        "harmonic_decay_rate": 0.072
+        "inharmonicity": 40.3,
+        "harmonic_decay_rate": 0.0054
       }
     },
     "kendang": {
@@ -838,8 +838,12 @@
           1.9035,
           1.9293,
           1.9551,
+          2.248,
+          2.5839,
+          2.6183,
           2.7734,
-          2.8423
+          2.8423,
+          2.8853
         ],
         "synth_amps": [
           0.5975,
@@ -848,12 +852,16 @@
           0.5425,
           0.5921,
           1.0,
+          0.4501,
+          0.4706,
+          0.4683,
           0.5337,
-          0.7712
+          0.7712,
+          0.4863
         ],
         "centroid_hz": 552.5,
-        "inharmonicity": 52.1,
-        "harmonic_decay_rate": 0.3262
+        "inharmonicity": 58.4,
+        "harmonic_decay_rate": 0.2813
       },
       "Pak_muka": {
         "note": "Pak_muka",
@@ -918,27 +926,35 @@
         ],
         "synth_ratios": [
           0.7491,
+          0.792,
           0.825,
           0.9999,
+          1.2177,
           1.2639,
           1.3002,
           1.3564,
+          2.122,
           2.1946,
+          2.2276,
           2.3101
         ],
         "synth_amps": [
           1.0,
+          0.4906,
           0.7487,
           0.6462,
+          0.438,
           0.5169,
           0.567,
           0.6415,
+          0.435,
           0.6279,
+          0.4375,
           0.5326
         ],
         "centroid_hz": 1049.6,
-        "inharmonicity": 61.8,
-        "harmonic_decay_rate": 0.3505
+        "inharmonicity": 52.3,
+        "harmonic_decay_rate": 0.2469
       },
       "Dag_belakang": {
         "note": "Dag_belakang",
@@ -1004,26 +1020,34 @@
         "synth_ratios": [
           1.0045,
           1.0318,
+          1.0636,
+          1.1364,
+          1.5,
           1.7636,
           1.7909,
           1.8318,
           1.8682,
           1.9091,
+          1.9409,
           2.5591
         ],
         "synth_amps": [
           0.2453,
           0.2988,
+          0.1354,
+          0.1021,
+          0.1026,
           1.0,
           0.703,
           0.3123,
           0.4127,
           0.187,
+          0.1147,
           0.1955
         ],
         "centroid_hz": 604.5,
-        "inharmonicity": 72.1,
-        "harmonic_decay_rate": 0.5484
+        "inharmonicity": 54.3,
+        "harmonic_decay_rate": 0.3316
       },
       "Dug_belakang": {
         "note": "Dug_belakang",
@@ -1092,9 +1116,13 @@
           1.3145,
           2.0161,
           2.1048,
+          2.1371,
           2.4435,
           2.4758,
-          3.7016
+          2.5968,
+          3.3871,
+          3.7016,
+          3.7419
         ],
         "synth_amps": [
           1.0,
@@ -1102,13 +1130,17 @@
           0.2314,
           0.2535,
           0.2022,
+          0.1819,
           0.315,
           0.2439,
-          0.1878
+          0.1814,
+          0.1717,
+          0.1878,
+          0.186
         ],
         "centroid_hz": 553.8,
-        "inharmonicity": 52.0,
-        "harmonic_decay_rate": 0.4997
+        "inharmonicity": 44.4,
+        "harmonic_decay_rate": 0.2497
       }
     },
     "suling": {
@@ -1178,18 +1210,20 @@
           2.0098,
           3.0328,
           4.0366,
-          5.0447
+          5.0447,
+          9.0813
         ],
         "synth_amps": [
           1.0,
           0.0866,
           0.2682,
           0.0941,
-          0.1086
+          0.1086,
+          0.021
         ],
         "centroid_hz": 1657.4,
-        "inharmonicity": 14.8,
-        "harmonic_decay_rate": 0.5854
+        "inharmonicity": 15.3,
+        "harmonic_decay_rate": 0.3419
       },
       "Dung 1": {
         "note": "Dung 1",
@@ -1258,7 +1292,8 @@
           2.9749,
           3.9698,
           4.9631,
-          5.9564
+          5.9564,
+          6.9497
         ],
         "synth_amps": [
           1.0,
@@ -1266,11 +1301,12 @@
           0.0798,
           0.0617,
           0.0683,
-          0.052
+          0.052,
+          0.0248
         ],
         "centroid_hz": 1946.1,
-        "inharmonicity": 13.1,
-        "harmonic_decay_rate": 0.5091
+        "inharmonicity": 14.4,
+        "harmonic_decay_rate": 0.4103
       },
       "Dang 1": {
         "note": "Dang 1",
@@ -1339,6 +1375,7 @@
           3.0059,
           3.9805,
           4.9657,
+          5.9616,
           6.9635
         ],
         "synth_amps": [
@@ -1347,11 +1384,12 @@
           0.0421,
           0.2507,
           0.0358,
+          0.0303,
           0.0369
         ],
         "centroid_hz": 1508.0,
-        "inharmonicity": 13.5,
-        "harmonic_decay_rate": 0.5488
+        "inharmonicity": 11.2,
+        "harmonic_decay_rate": 0.3723
       },
       "Ding 1": {
         "note": "Ding 1",
@@ -1431,8 +1469,8 @@
           0.0223
         ],
         "centroid_hz": 1739.5,
-        "inharmonicity": 33.6,
-        "harmonic_decay_rate": 0.4521
+        "inharmonicity": 34.3,
+        "harmonic_decay_rate": 0.3645
       },
       "Dong 1": {
         "note": "Dong 1",
@@ -1504,8 +1542,8 @@
           0.0234
         ],
         "centroid_hz": 1722.6,
-        "inharmonicity": 10.0,
-        "harmonic_decay_rate": 0.6158
+        "inharmonicity": 13.4,
+        "harmonic_decay_rate": 0.3445
       },
       "Deng 2": {
         "note": "Deng 2",
@@ -1583,8 +1621,8 @@
           0.0774
         ],
         "centroid_hz": 3065.3,
-        "inharmonicity": 4.5,
-        "harmonic_decay_rate": 0.659
+        "inharmonicity": 7.8,
+        "harmonic_decay_rate": 0.3572
       },
       "Dung 2": {
         "note": "Dung 2",
@@ -1653,7 +1691,8 @@
           2.9927,
           3.9924,
           4.9881,
-          5.9862
+          5.9862,
+          6.9851
         ],
         "synth_amps": [
           1.0,
@@ -1661,11 +1700,12 @@
           0.0869,
           0.0587,
           0.052,
-          0.0351
+          0.0351,
+          0.0212
         ],
         "centroid_hz": 3281.7,
-        "inharmonicity": 3.5,
-        "harmonic_decay_rate": 0.5465
+        "inharmonicity": 4.0,
+        "harmonic_decay_rate": 0.4115
       },
       "Dang 2": {
         "note": "Dang 2",
@@ -1734,7 +1774,8 @@
           2.9935,
           3.9768,
           4.887,
-          5.9587
+          5.9587,
+          6.971
         ],
         "synth_amps": [
           1.0,
@@ -1742,11 +1783,12 @@
           0.0365,
           0.2365,
           0.024,
-          0.0229
+          0.0229,
+          0.0219
         ],
         "centroid_hz": 2628.4,
-        "inharmonicity": 18.4,
-        "harmonic_decay_rate": 0.5674
+        "inharmonicity": 13.5,
+        "harmonic_decay_rate": 0.3735
       },
       "Ding 2": {
         "note": "Ding 2",
@@ -1824,8 +1866,8 @@
           0.0291
         ],
         "centroid_hz": 3239.0,
-        "inharmonicity": 23.4,
-        "harmonic_decay_rate": 0.4923
+        "inharmonicity": 28.2,
+        "harmonic_decay_rate": 0.3838
       },
       "Dong 2": {
         "note": "Dong 2",
@@ -1899,8 +1941,8 @@
           0.0289
         ],
         "centroid_hz": 3134.8,
-        "inharmonicity": 14.1,
-        "harmonic_decay_rate": 0.6172
+        "inharmonicity": 10.2,
+        "harmonic_decay_rate": 0.3522
       }
     }
   }
