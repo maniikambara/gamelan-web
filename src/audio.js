@@ -18,13 +18,16 @@ const API_BASE = '/api'
 // ─── Procedural synthesizers (Web Audio API) ─────────────────────────────────
 
 const _synthesizers = {
-  gangsa(ctx, baseFreq, noteParams, userParams) {
+  gangsa(ctx, baseFreq, noteParams, userParams, noteIndex = 0) {
     const now = ctx.currentTime
     // Note params from analysis (if available)
     const adsr = noteParams?.adsr || { attack_ms: 10, decay_ms: 5, sustain: 0.9, release_ms: 3000 }
-    const ratios = noteParams?.synth_ratios || [1.0, 2.756, 5.404, 8.933]
-    const amps = noteParams?.synth_amps || [1.0, 0.55, 0.28, 0.14]
-    const ombak = noteParams?.ombak_hz || 6
+    const isNadaKecil = noteIndex >= 5
+    const defaultRatios = isNadaKecil ? [1.0, 2.61, 4.80] : [1.0, 2.76, 5.18]
+    const defaultAmps   = isNadaKecil ? [1.0, 0.50, 0.25] : [1.0, 0.55, 0.28]
+    const ratios = noteParams?.synth_ratios || defaultRatios
+    const amps   = noteParams?.synth_amps   || defaultAmps
+    const ombak = noteParams?.ombak_hz || 8
     const f0 = noteParams?.f0_hz || baseFreq
 
     // Override with user settings
@@ -72,69 +75,152 @@ const _synthesizers = {
 
   kendang(ctx, baseFreq, noteParams, userParams, noteIndex) {
     const now = ctx.currentTime
-    const f0 = noteParams?.f0_hz || baseFreq
-    const adsr = noteParams?.adsr || { attack_ms: 5, decay_ms: 30, sustain: 0.4, release_ms: 500 }
-    
-    const isTung = noteIndex % 2 === 0
-    const dur = (adsr.attack_ms + adsr.decay_ms + adsr.release_ms) / 1000
+    const f0  = noteParams?.f0_hz || baseFreq
+    const masterGain = userParams.gain || 0.8
 
-    const osc = ctx.createOscillator()
-    const filter = ctx.createBiquadFilter()
-    const gain = ctx.createGain()
+    // Tut: kepala lanang muka tengah — tonal + bandpass noise, ADSR 3/50/8%/180
+    if (noteIndex === 0) {
+      const adsr   = noteParams?.adsr || { attack_ms: 3, decay_ms: 50, sustain: 0.08, release_ms: 180 }
+      const dur    = (adsr.attack_ms + adsr.decay_ms + adsr.release_ms) / 1000
+      const master = ctx.createGain()
+      master.gain.setValueAtTime(0, now)
+      master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
+      master.gain.exponentialRampToValueAtTime(0.001, now + dur)
+      master.connect(ctx.destination)
 
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(f0, now)
-    osc.frequency.exponentialRampToValueAtTime(f0 * (isTung ? 0.7 : 0.5), now + dur * 0.8)
+      const osc1 = ctx.createOscillator(); const g1 = ctx.createGain()
+      osc1.type = 'sine'; osc1.frequency.value = f0
+      g1.gain.value = 0.7
+      osc1.connect(g1); g1.connect(master)
+      osc1.start(now); osc1.stop(now + dur + 0.1)
 
-    if (isTung) {
-      filter.type = 'lowpass'
-      filter.frequency.value = f0 * 3
-      filter.Q.value = 2
-    } else {
-      filter.type = 'highpass'
-      filter.frequency.value = f0 * 1.2
-      filter.Q.value = (userParams.resonance || 0.4) * 8
+      const osc2 = ctx.createOscillator(); const g2 = ctx.createGain()
+      osc2.type = 'sine'; osc2.frequency.value = f0 * 1.5
+      g2.gain.value = 0.28
+      osc2.connect(g2); g2.connect(master)
+      osc2.start(now); osc2.stop(now + dur + 0.1)
+
+      return { gainNode: master, oscillators: [osc1, osc2] }
     }
 
-    const attackSec = Math.max(0.005, adsr.attack_ms / 1000)
-    gain.gain.setValueAtTime(0, now)
-    gain.gain.linearRampToValueAtTime(userParams.gain || 0.8, now + attackSec)
-    gain.gain.exponentialRampToValueAtTime(0.001, now + dur)
+    // Pak: kepala lanang muka tepi — impulsif tajam, ADSR 2/18/2%/80
+    if (noteIndex === 1) {
+      const adsr = noteParams?.adsr || { attack_ms: 2, decay_ms: 18, sustain: 0.02, release_ms: 80 }
+      const dur  = (adsr.attack_ms + adsr.decay_ms + adsr.release_ms) / 1000
+      const master = ctx.createGain()
+      master.gain.setValueAtTime(0, now)
+      master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
+      master.gain.exponentialRampToValueAtTime(0.001, now + dur)
+      master.connect(ctx.destination)
 
-    osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination)
-    osc.start(now); osc.stop(now + dur + 0.5)
-    return { gainNode: gain, oscillators: [osc] }
+      const bufSize = ctx.sampleRate * dur
+      const noiseBuffer = ctx.createBuffer(1, bufSize, ctx.sampleRate)
+      const data = noiseBuffer.getChannelData(0)
+      for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1)
+      const noiseSource = ctx.createBufferSource()
+      noiseSource.buffer = noiseBuffer
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'bandpass'; filter.frequency.value = f0 * 1.8; filter.Q.value = 0.8
+      noiseSource.connect(filter); filter.connect(master)
+      noiseSource.start(now); noiseSource.stop(now + dur + 0.1)
+      return { gainNode: master, oscillators: [noiseSource] }
+    }
+
+    // Dag: kepala wadon belakang terbuka — pitch-glide menurun resonan, ADSR 5/60/12%/200
+    if (noteIndex === 2) {
+      const adsr = noteParams?.adsr || { attack_ms: 5, decay_ms: 60, sustain: 0.12, release_ms: 200 }
+      const dur  = (adsr.attack_ms + adsr.decay_ms + adsr.release_ms) / 1000
+      const master = ctx.createGain()
+      master.gain.setValueAtTime(0, now)
+      master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
+      master.gain.exponentialRampToValueAtTime(0.001, now + dur)
+      master.connect(ctx.destination)
+
+      const osc = ctx.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(f0, now)
+      osc.frequency.exponentialRampToValueAtTime(f0 * 0.6, now + dur * 0.85)
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'lowpass'; filter.frequency.value = f0 * 4; filter.Q.value = 1.5
+      osc.connect(filter); filter.connect(master)
+      osc.start(now); osc.stop(now + dur + 0.1)
+      return { gainNode: master, oscillators: [osc] }
+    }
+
+    // Dug: kepala wadon belakang dalam — pitch-glide menurun bass, ADSR 4/40/5%/120
+    const adsr = noteParams?.adsr || { attack_ms: 4, decay_ms: 40, sustain: 0.05, release_ms: 120 }
+    const dur  = (adsr.attack_ms + adsr.decay_ms + adsr.release_ms) / 1000
+    const master = ctx.createGain()
+    master.gain.setValueAtTime(0, now)
+    master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
+    master.gain.exponentialRampToValueAtTime(0.001, now + dur)
+    master.connect(ctx.destination)
+
+    const osc = ctx.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(f0, now)
+    osc.frequency.exponentialRampToValueAtTime(f0 * 0.5, now + dur * 0.8)
+    osc.connect(master)
+    osc.start(now); osc.stop(now + dur + 0.1)
+    return { gainNode: master, oscillators: [osc] }
   },
 
   suling(ctx, baseFreq, noteParams, userParams) {
     const now = ctx.currentTime
-    const f0 = noteParams?.f0_hz || baseFreq
-    const adsr = noteParams?.adsr || { attack_ms: 90, decay_ms: 10, sustain: 0.9, release_ms: 600 }
-    const dur = (adsr.release_ms / 1000) + 0.5
+    const f0  = noteParams?.f0_hz || baseFreq
+    const adsr = noteParams?.adsr || { attack_ms: 100, decay_ms: 80, sustain: 0.88, release_ms: 600 }
+    const dur  = (adsr.release_ms / 1000) + 0.5
+    const breath = (userParams.breath ?? 0.18) * Math.sqrt(f0 / 558.0)
 
     const master = ctx.createGain()
     master.gain.setValueAtTime(0, now)
-    const attackSec = Math.max(0.005, adsr.attack_ms / 1000)
+    const attackSec = Math.max(0.005, (userParams.attack_ms ?? adsr.attack_ms) / 1000)
     master.gain.linearRampToValueAtTime(userParams.gain || 0.7, now + attackSec)
     master.gain.setTargetAtTime(0, now + dur * 0.8, dur * 0.15)
     master.connect(ctx.destination)
-    
+
     const oscs = []
-    const ratios = noteParams?.synth_ratios || [1.0, 2.0]
-    const amps = noteParams?.synth_amps || [1.0, 0.22]
+    const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
+    const amps   = noteParams?.synth_amps   || [1.0, 0.22, 0.05]
 
     ratios.forEach((r, i) => {
       const amp = amps[i] || 0
       if (amp < 0.001) return
-      const osc = ctx.createOscillator()
-      const g = ctx.createGain()
-      osc.type = 'sine'
-      osc.frequency.value = f0 * r
+      const osc = ctx.createOscillator(); const g = ctx.createGain()
+      osc.type = 'sine'; osc.frequency.value = f0 * r
       g.gain.value = amp
       osc.connect(g); g.connect(master)
       osc.start(now); osc.stop(now + dur + 0.5)
       oscs.push(osc)
     })
+
+    // Noise hembusan napas — sigma 0.18, bandpass 0.7f to min(4f, 8000 Hz)
+    if (breath > 0.01) {
+      const noiseFrames = Math.ceil((dur + 0.5) * ctx.sampleRate)
+      const noiseBuffer = ctx.createBuffer(1, noiseFrames, ctx.sampleRate)
+      const data = noiseBuffer.getChannelData(0)
+      // Box-Muller approximation for Gaussian noise with sigma 0.18
+      for (let i = 0; i < noiseFrames; i += 2) {
+        const u1 = Math.random() || 1e-10
+        const u2 = Math.random()
+        const mag = 0.18 * Math.sqrt(-2.0 * Math.log(u1))
+        data[i]     = mag * Math.cos(2.0 * Math.PI * u2)
+        if (i + 1 < noiseFrames) data[i + 1] = mag * Math.sin(2.0 * Math.PI * u2)
+      }
+      const noiseSource = ctx.createBufferSource()
+      noiseSource.buffer = noiseBuffer
+      const bpFilter = ctx.createBiquadFilter()
+      bpFilter.type = 'bandpass'
+      const bpCenter = f0 * 2.35  // geometric mean of 0.7f and min(4f,8000)
+      bpFilter.frequency.value = Math.min(bpCenter, 4000)
+      bpFilter.Q.value = 0.6
+      const noiseGain = ctx.createGain()
+      noiseGain.gain.value = breath
+      noiseSource.connect(bpFilter); bpFilter.connect(noiseGain); noiseGain.connect(master)
+      noiseSource.start(now); noiseSource.stop(now + dur + 0.5)
+      oscs.push(noiseSource)
+    }
+
     return { gainNode: master, oscillators: oscs }
   },
 }
@@ -151,6 +237,9 @@ export class AudioEngine {
 
     /** Active sources for muting: key → { gainNode, oscillators } */
     this.activeSources = {}
+
+    /** Sample buffers uploaded by user: key `instrument/noteName` → AudioBuffer */
+    this.sampleBuffers = {}
 
     // Recording state
     this.isRecording = false
@@ -169,6 +258,37 @@ export class AudioEngine {
   resume() {
     this.ensureContext()
     if (this.ctx.state === 'suspended') this.ctx.resume()
+  }
+
+  /**
+   * Decode and store an audio sample for a specific instrument note.
+   * @param {string} instrument
+   * @param {string} noteName
+   * @param {ArrayBuffer} arrayBuffer  — raw bytes from file upload
+   * @returns {Promise<boolean>} true on success
+   */
+  async loadSample(instrument, noteName, arrayBuffer) {
+    this.ensureContext()
+    try {
+      const decoded = await this.ctx.decodeAudioData(arrayBuffer)
+      const key = `${instrument}/${noteName}`
+      this.sampleBuffers[key] = decoded
+      console.info(`[AudioEngine] Sample loaded: ${key}`)
+      return true
+    } catch (err) {
+      console.warn(`[AudioEngine] Failed to decode sample:`, err)
+      return false
+    }
+  }
+
+  /**
+   * Check whether a user-uploaded sample exists for the given note.
+   * @param {string} instrument
+   * @param {string} noteName
+   * @returns {boolean}
+   */
+  hasSample(instrument, noteName) {
+    return !!this.sampleBuffers[`${instrument}/${noteName}`]
   }
 
   // ─── Synthesis Parameters Loading ─────────────────────────────────────────
@@ -213,7 +333,13 @@ export class AudioEngine {
     // Look up specific note parameters if available
     const noteParams = this.synthParams[instrument]?.[noteName]
 
-    const result = this._procedural(instrument, noteIndex, freq, params, noteParams)
+    let result
+    const sampleBuffer = this.sampleBuffers[key]
+    if (sampleBuffer) {
+      result = this._playSample(sampleBuffer, params)
+    } else {
+      result = this._procedural(instrument, noteIndex, freq, params, noteParams)
+    }
     
     if (result) {
       this.activeSources[key] = {
@@ -244,7 +370,7 @@ export class AudioEngine {
       })
     }
 
-    return 'synth'
+    return sampleBuffer ? 'sample' : 'synth'
   }
 
   /**
@@ -276,14 +402,28 @@ export class AudioEngine {
   _procedural(instrument, noteIndex, freq, params, noteParams) {
     switch (instrument) {
       case 'gangsa':
-        return _synthesizers.gangsa(this.ctx, freq, noteParams, params)
+        return _synthesizers.gangsa(this.ctx, freq, noteParams, params, noteIndex)
       case 'kendang':
         return _synthesizers.kendang(this.ctx, freq, noteParams, params, noteIndex)
       case 'suling':
         return _synthesizers.suling(this.ctx, freq, noteParams, params)
       default:
-        return _synthesizers.gangsa(this.ctx, freq, noteParams, params)
+        return _synthesizers.gangsa(this.ctx, freq, noteParams, params, noteIndex)
     }
+  }
+
+  /** Play a decoded AudioBuffer through the audio graph. */
+  _playSample(buffer, params) {
+    const ctx  = this.ctx
+    const now  = ctx.currentTime
+    const gain = ctx.createGain()
+    gain.gain.setValueAtTime(params.gain || 0.8, now)
+    gain.connect(ctx.destination)
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    source.connect(gain)
+    source.start(now)
+    return { gainNode: gain, oscillators: [source] }
   }
 
   // ─── Recording ────────────────────────────────────────────────────────────
@@ -377,8 +517,8 @@ export class AudioEngine {
         sample = Math.sin(2 * Math.PI * f * t) * env
       } else {
         const env = att * Math.exp(-t * 0.5)
-        const ratios = noteParams?.synth_ratios || [1.0, 2.0]
-        const amps = noteParams?.synth_amps || [1.0, 0.22]
+        const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
+        const amps   = noteParams?.synth_amps   || [1.0, 0.22, 0.05]
         for (let j = 0; j < ratios.length; j++) {
           sample += amps[j] * Math.sin(2 * Math.PI * f0 * ratios[j] * t) * env
         }

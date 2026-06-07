@@ -38,7 +38,7 @@ const LABELS = {
 const RANGES = {
   resonance:  { min: 0,   max: 1,    step: 0.01 },
   gain:       { min: 0,   max: 1,    step: 0.01 },
-  ombak:      { min: 0,   max: 20,   step: 0.5  },
+  ombak:      { min: 5,   max: 10,   step: 0.5  },
   release_ms: { min: 100, max: 3000, step: 100  },
   depth:      { min: 0,   max: 1,    step: 0.05 },
   dryness:    { min: 0,   max: 1,    step: 0.05 },

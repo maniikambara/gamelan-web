@@ -49,7 +49,7 @@ export default {
         case 'gangsa':
           return 'Keyboard Q–P · Klik tengah bilah = pukul · Klik bawah bilah = mute · Tahan keyboard = mute saat dilepas'
         case 'kendang':
-          return 'Keyboard A Tung Muka · S Pak Muka · D Tung Belakang · F Pak Belakang · Klik pada area drum'
+          return 'Keyboard A Tut Muka · S Pak Muka · D Dag Belakang · F Dug Belakang · Klik pada area drum'
         case 'suling':
           return 'Keyboard Z X C V B N · Klik pada lubang suling'
         default:

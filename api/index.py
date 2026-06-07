@@ -100,40 +100,40 @@ _load_default_samples()
 INSTRUMENTS = {
     "gangsa": {
         "label": "Gangsa",
-        "description": "Metalofon bilah logam, laras pelog Bali",
+        "description": "Metalofon bilah logam, laras pelog selisir Bali",
         "notes": [
-            {"index": 0, "name": "Ding",  "freq": 253},
-            {"index": 1, "name": "Dong",  "freq": 283},
-            {"index": 2, "name": "Deng",  "freq": 318},
-            {"index": 3, "name": "Deung", "freq": 345},
-            {"index": 4, "name": "Dung",  "freq": 395},
-            {"index": 5, "name": "Dang",  "freq": 444},
-            {"index": 6, "name": "Daing", "freq": 496},
-            {"index": 7, "name": "Ding²", "freq": 506},
-            {"index": 8, "name": "Dong²", "freq": 567},
-            {"index": 9, "name": "Deng²", "freq": 637},
+            {"index": 0, "name": "Dong",  "freq": 261},
+            {"index": 1, "name": "Deng",  "freq": 292},
+            {"index": 2, "name": "Dung",  "freq": 368},
+            {"index": 3, "name": "Dang",  "freq": 413},
+            {"index": 4, "name": "Ling",  "freq": 465},
+            {"index": 5, "name": "Dong'", "freq": 525},
+            {"index": 6, "name": "Deng'", "freq": 588},
+            {"index": 7, "name": "Dung'", "freq": 740},
+            {"index": 8, "name": "Dang'", "freq": 832},
+            {"index": 9, "name": "Ding",  "freq": 936},
         ],
     },
     "kendang": {
         "label": "Kendang",
-        "description": "Drum bermembran dua bagian, 4 variasi suara",
+        "description": "Drum bermembran dua bagian, 4 pukulan autentik",
         "notes": [
-            {"index": 0, "name": "Tung Tengah · Muka",     "freq": 80},
-            {"index": 1, "name": "Pak Pinggir · Muka",     "freq": 130},
-            {"index": 2, "name": "Tung Tengah · Belakang", "freq": 95},
-            {"index": 3, "name": "Pak Pinggir · Belakang", "freq": 160},
+            {"index": 0, "name": "Tut · Muka",      "freq": 150},
+            {"index": 1, "name": "Pak · Muka",      "freq": 200},
+            {"index": 2, "name": "Dag · Belakang",  "freq": 80},
+            {"index": 3, "name": "Dug · Belakang",  "freq": 110},
         ],
     },
     "suling": {
         "label": "Suling Bali",
-        "description": "Seruling bambu 6 lubang, laras pelog Bali",
+        "description": "Seruling bambu 6 lubang, laras pelog selisir, tetekep ndeng",
         "notes": [
-            {"index": 0, "name": "1 Do",  "freq": 523},
-            {"index": 1, "name": "3 Mi",  "freq": 587},
-            {"index": 2, "name": "4 Fa",  "freq": 659},
-            {"index": 3, "name": "5 Sol", "freq": 784},
-            {"index": 4, "name": "7 Si",  "freq": 880},
-            {"index": 5, "name": "1 Do (oktaf)", "freq": 1047},
+            {"index": 0, "name": "Dong",  "freq": 558},
+            {"index": 1, "name": "Deng",  "freq": 621},
+            {"index": 2, "name": "Dung",  "freq": 764},
+            {"index": 3, "name": "Dang",  "freq": 800},
+            {"index": 4, "name": "Ding",  "freq": 1024},
+            {"index": 5, "name": "Deng'", "freq": 1250},
         ],
     },
 }
@@ -241,7 +241,7 @@ _from_wav = _from_audio
 # ─── Synthesis ───────────────────────────────────────────────────────────────
 
 def synth_gangsa(freq: float, resonance: float = 0.5, gain: float = 0.8,
-                 ombak: float = 6, release_ms: float = 2000,
+                 ombak: float = 8, release_ms: float = 2000,
                  note_name: str = "") -> bytes:
     # Pull analyzed params for this note if available
     np_ = _get_note_params("gangsa", note_name)
@@ -253,7 +253,7 @@ def synth_gangsa(freq: float, resonance: float = 0.5, gain: float = 0.8,
     decay  = adsr_p.get("decay_ms", 100)
     sustain = adsr_p.get("sustain", 0.45)
     # Ombak: use analyzed value if detected, otherwise keep user param
-    if ombak == 6 and "ombak_hz" in np_:
+    if ombak == 8 and "ombak_hz" in np_:
         ombak = np_["ombak_hz"]
 
     dur = 3.0 + release_ms / 1000
@@ -310,8 +310,50 @@ def synth_kendang_pinggir(freq: float, gain: float = 0.8,
     return _to_wav(_normalize(audio) * gain)
 
 
+def synth_dag(freq: float, gain: float = 0.8,
+              release_ms: float = 200, note_name: str = "") -> bytes:
+    """Dag: kepala wadon belakang terbuka — pitch-glide menurun resonan, ADSR 5/60/12%/200ms."""
+    np_ = _get_note_params("kendang", note_name)
+    adsr_p = np_.get("adsr", {})
+    attack  = adsr_p.get("attack_ms",  5)
+    decay   = adsr_p.get("decay_ms",  60)
+    sustain = adsr_p.get("sustain",  0.12)
+
+    dur = 1.5
+    t   = np.linspace(0, dur, int(SAMPLE_RATE * dur), endpoint=False)
+    # Pitch-glide: frequency sweeps down from f0 to f0*0.6
+    freq_env = freq * np.exp(-t * 2.0)
+    freq_env = np.clip(freq_env, freq * 0.6, freq)
+    phase    = np.cumsum(2 * np.pi * freq_env / SAMPLE_RATE)
+    audio    = np.sin(phase).astype(np.float32)
+    filt     = _bandpass(audio, max(20, freq * 0.5), freq * 5, SAMPLE_RATE)
+    audio    = 0.7 * audio + 0.3 * filt
+    audio    = _adsr(audio, SAMPLE_RATE, attack, decay, sustain, release_ms)
+    return _to_wav(_normalize(audio) * gain)
+
+
+def synth_dug(freq: float, gain: float = 0.8,
+              release_ms: float = 120, note_name: str = "") -> bytes:
+    """Dug: kepala wadon belakang dalam — pitch-glide menurun bass, ADSR 4/40/5%/120ms."""
+    np_ = _get_note_params("kendang", note_name)
+    adsr_p = np_.get("adsr", {})
+    attack  = adsr_p.get("attack_ms",  4)
+    decay   = adsr_p.get("decay_ms",  40)
+    sustain = adsr_p.get("sustain",  0.05)
+
+    dur = 1.0
+    t   = np.linspace(0, dur, int(SAMPLE_RATE * dur), endpoint=False)
+    # Pitch-glide: frequency sweeps down more steeply (bass membran)
+    freq_env = freq * np.exp(-t * 3.5)
+    freq_env = np.clip(freq_env, freq * 0.5, freq)
+    phase    = np.cumsum(2 * np.pi * freq_env / SAMPLE_RATE)
+    audio    = np.sin(phase).astype(np.float32)
+    audio    = _adsr(audio, SAMPLE_RATE, attack, decay, sustain, release_ms)
+    return _to_wav(_normalize(audio) * gain)
+
+
 def synth_suling(freq: float, gain: float = 0.8,
-                 breath: float = 0.2, attack_ms: float = 90,
+                 breath: float = 0.2, attack_ms: float = 100,
                  release_ms: float = 600, note_name: str = "") -> bytes:
     np_ = _get_note_params("suling", note_name)
     adsr_p = np_.get("adsr", {})
@@ -326,9 +368,10 @@ def synth_suling(freq: float, gain: float = 0.8,
     t   = np.linspace(0, dur, int(SAMPLE_RATE * dur), endpoint=False)
     audio = sum(a * np.sin(2 * np.pi * freq * r * t)
                 for r, a in zip(ratios, harm_amps)).astype(np.float32)
-    noise = np.random.normal(0, 0.12, len(t)).astype(np.float32)
-    noise = _bandpass(noise, max(30, freq * 0.7), min(freq * 4, 6000), SAMPLE_RATE)
-    audio += breath * noise
+    noise = np.random.normal(0, 0.18, len(t)).astype(np.float32)
+    noise = _bandpass(noise, max(30, freq * 0.7), min(freq * 4, 8000), SAMPLE_RATE)
+    noise_breath = breath * np.sqrt(freq / 558.0)
+    audio += noise_breath * noise
     audio = _adsr(audio, SAMPLE_RATE, attack_used, decay, sustain, release_ms)
     return _to_wav(_normalize(audio) * gain)
 
@@ -430,20 +473,28 @@ async def play_note(request: Request):
         wav = synth_gangsa(freq,
                            resonance=p.get("resonance",0.5),
                            gain=p.get("gain",0.8),
-                           ombak=p.get("ombak",6),
+                           ombak=p.get("ombak",8),
                            release_ms=p.get("release_ms",2000),
                            note_name=note_name)
     elif inst == "kendang":
-        if idx % 2 == 0:
-            wav = synth_kendang_tengah(freq, p.get("gain",0.8),
-                                       p.get("depth",0.6),
-                                       p.get("release_ms",180),
+        if idx == 0:
+            wav = synth_kendang_tengah(freq, p.get("gain", 0.8),
+                                       p.get("depth", 0.6),
+                                       p.get("release_ms", 180),
                                        note_name=note_name)
-        else:
-            wav = synth_kendang_pinggir(freq, p.get("gain",0.8),
-                                        p.get("dryness",0.7),
-                                        p.get("release_ms",80),
+        elif idx == 1:
+            wav = synth_kendang_pinggir(freq, p.get("gain", 0.8),
+                                        p.get("dryness", 0.7),
+                                        p.get("release_ms", 80),
                                         note_name=note_name)
+        elif idx == 2:
+            wav = synth_dag(freq, p.get("gain", 0.8),
+                            p.get("release_ms", 200),
+                            note_name=note_name)
+        else:
+            wav = synth_dug(freq, p.get("gain", 0.8),
+                            p.get("release_ms", 120),
+                            note_name=note_name)
     elif inst == "suling":
         wav = synth_suling(freq, p.get("gain",0.8),
                            p.get("breath",0.2), p.get("attack_ms",90),
@@ -476,20 +527,28 @@ async def synthesize(request: Request):
         wav = synth_gangsa(freq,
                            resonance=p.get("resonance",0.5),
                            gain=p.get("gain",0.8),
-                           ombak=p.get("ombak",6),
+                           ombak=p.get("ombak",8),
                            release_ms=p.get("release_ms",2000),
                            note_name=note_name)
     elif inst == "kendang":
-        if idx % 2 == 0:
-            wav = synth_kendang_tengah(freq, p.get("gain",0.8),
-                                       p.get("depth",0.6),
-                                       p.get("release_ms",180),
+        if idx == 0:
+            wav = synth_kendang_tengah(freq, p.get("gain", 0.8),
+                                       p.get("depth", 0.6),
+                                       p.get("release_ms", 180),
                                        note_name=note_name)
-        else:
-            wav = synth_kendang_pinggir(freq, p.get("gain",0.8),
-                                        p.get("dryness",0.7),
-                                        p.get("release_ms",80),
+        elif idx == 1:
+            wav = synth_kendang_pinggir(freq, p.get("gain", 0.8),
+                                        p.get("dryness", 0.7),
+                                        p.get("release_ms", 80),
                                         note_name=note_name)
+        elif idx == 2:
+            wav = synth_dag(freq, p.get("gain", 0.8),
+                            p.get("release_ms", 200),
+                            note_name=note_name)
+        else:
+            wav = synth_dug(freq, p.get("gain", 0.8),
+                            p.get("release_ms", 120),
+                            note_name=note_name)
     elif inst == "suling":
         wav = synth_suling(freq, p.get("gain",0.8),
                            p.get("breath",0.2), p.get("attack_ms",90),

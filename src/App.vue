@@ -38,6 +38,10 @@
         @record-start="startRecording"
         @record-stop="onRecordingStop"
       />
+      <SampleUpload
+        :instruments="instruments"
+        @sample-loaded="onSampleLoaded"
+      />
     </aside>
   </div>
 </template>
@@ -51,10 +55,11 @@ import Sidebar from './components/Sidebar.vue'
 import InstrumentPanel from './components/InstrumentPanel.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import RecordingPanel from './components/RecordingPanel.vue'
+import SampleUpload from './components/SampleUpload.vue'
 
 export default {
   components: {
-    Header, Sidebar, InstrumentPanel, SettingsPanel, RecordingPanel,
+    Header, Sidebar, InstrumentPanel, SettingsPanel, RecordingPanel, SampleUpload,
   },
   setup() {
     const instruments        = INSTRUMENTS
@@ -66,7 +71,7 @@ export default {
     const audioEngine = new AudioEngine()
 
     const params = reactive({
-      gangsa:  { resonance: 0.5, gain: 0.8, ombak: 6, release_ms: 2000 },
+      gangsa:  { resonance: 0.5, gain: 0.8, ombak: 8, release_ms: 2000 },
       kendang: { resonance: 0.4, gain: 0.8, depth: 0.6, dryness: 0.7, release_ms: 160 },
       suling:  { resonance: 0.4, gain: 0.8, breath: 0.2, attack_ms: 90, release_ms: 600 },
     })
@@ -84,11 +89,15 @@ export default {
     const selectInstrument = (key) => { currentInstrument.value = key }
 
     // ── Note playback ──────────────────────────────────────────────────────
-    const playNote = ({ noteIndex, noteName, freq }) => {
+    const playNote = ({ noteIndex, noteName, freq, positionGain }) => {
       lastNote.value = noteName
+      const noteParams = { ...params[currentInstrument.value] }
+      if (positionGain !== undefined) {
+        noteParams.gain = (noteParams.gain || 0.8) * positionGain
+      }
       const mode = audioEngine.playNote(
         currentInstrument.value, noteIndex, noteName, freq,
-        params[currentInstrument.value]
+        noteParams
       )
       lastSynthMode.value = mode
     }
@@ -109,12 +118,23 @@ export default {
       audioEngine.stopRecording().then(callback)
     }
 
+    /** Track loaded sample status per instrument/note for badge display */
+    const loadedSamples = reactive({})
+
+    const onSampleLoaded = async (instrument, noteName, arrayBuffer) => {
+      const success = await audioEngine.loadSample(instrument, noteName, arrayBuffer)
+      if (success) {
+        loadedSamples[`${instrument}/${noteName}`] = true
+      }
+    }
+
     return {
       instruments, currentInstrument, lastNote, lastSynthMode,
       paramsReady,
       params, accentColor, accentDim,
       selectInstrument, playNote, muteNote, updateParam, startRecording,
       onRecordingStop,
+      loadedSamples, onSampleLoaded,
     }
   },
 }

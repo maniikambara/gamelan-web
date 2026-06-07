@@ -6,28 +6,28 @@
 
     <div class="drums-row">
       <div class="drum-cell">
-        <div class="drum-label drum-label-muka">MUKA &nbsp;<kbd class="kbd-small">A</kbd> Tung · <kbd class="kbd-small">S</kbd> Pak</div>
+        <div class="drum-label drum-label-muka">MUKA &nbsp;<kbd class="kbd-small">A</kbd> Tut · <kbd class="kbd-small">S</kbd> Pak</div>
         <div class="snare-wrap">
           <img ref="imgMukaRef" :src="instrument.snareImage" class="snare-img" alt="Kendang Muka" draggable="false" />
           <canvas ref="canvasMukaRef" class="hit-canvas"></canvas>
         </div>
         <div class="zone-hints">
-          <span class="zone-inner">Tengah = Tung</span>
+          <span class="zone-inner">Tengah = Tut</span>
           <span class="zone-sep">·</span>
           <span class="zone-outer">Tepi = Pak</span>
         </div>
       </div>
 
       <div class="drum-cell">
-        <div class="drum-label drum-label-belakang">BELAKANG &nbsp;<kbd class="kbd-small">D</kbd> Tung · <kbd class="kbd-small">F</kbd> Pak</div>
+        <div class="drum-label drum-label-belakang">BELAKANG &nbsp;<kbd class="kbd-small">D</kbd> Dag · <kbd class="kbd-small">F</kbd> Dug</div>
         <div class="snare-wrap">
           <img ref="imgBelakangRef" :src="instrument.snareImage" class="snare-img" alt="Kendang Belakang" draggable="false" />
           <canvas ref="canvasBelakangRef" class="hit-canvas"></canvas>
         </div>
         <div class="zone-hints">
-          <span class="zone-inner">Tengah = Tung</span>
+          <span class="zone-inner">Tengah = Dag</span>
           <span class="zone-sep">·</span>
-          <span class="zone-outer">Tepi = Pak</span>
+          <span class="zone-outer">Tepi = Dug</span>
         </div>
       </div>
     </div>
@@ -114,8 +114,27 @@ export default {
         const noteIndex = props.instrument.detectHit(x, y, props.instrument.snareW, canvas.width, bagian)
         if (noteIndex === null) return
 
+        const scale = props.instrument.snareW / canvas.width
+        const ox = x * scale
+        const oy = y * scale
+        const dist = Math.hypot(ox - props.instrument.snareCX, oy - props.instrument.snareCY)
+
+        let positionGain = 1.0
+        if (noteIndex === 0 || noteIndex === 2) {
+          // Inner zone: maximum at innerR * 0.6. Linear dropoff towards center and edge.
+          const center = props.instrument.innerR * 0.6
+          const diff = Math.abs(dist - center)
+          positionGain = Math.max(0.4, 1.0 - diff / (props.instrument.innerR * 0.8))
+        } else if (noteIndex === 1 || noteIndex === 3) {
+          // Outer zone: maximum at (innerR + outerR) / 2
+          const center = (props.instrument.innerR + props.instrument.outerR) / 2
+          const diff = Math.abs(dist - center)
+          const span = (props.instrument.outerR - props.instrument.innerR) / 2
+          positionGain = Math.max(0.4, 1.0 - diff / (span * 1.5))
+        }
+
         const note = props.instrument.notes[noteIndex]
-        emit('play-note', { noteIndex: note.index, noteName: note.name, freq: note.freq })
+        emit('play-note', { noteIndex: note.index, noteName: note.name, freq: note.freq, positionGain })
 
         highlights.value[bagian] = noteIndex
         drawOverlay(bagian, noteIndex)
