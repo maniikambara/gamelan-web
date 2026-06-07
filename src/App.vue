@@ -38,10 +38,7 @@
         @record-start="startRecording"
         @record-stop="onRecordingStop"
       />
-      <SampleUpload
-        :instruments="instruments"
-        @sample-loaded="onSampleLoaded"
-      />
+
     </aside>
   </div>
 </template>
@@ -55,11 +52,9 @@ import Sidebar from './components/Sidebar.vue'
 import InstrumentPanel from './components/InstrumentPanel.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import RecordingPanel from './components/RecordingPanel.vue'
-import SampleUpload from './components/SampleUpload.vue'
-
 export default {
   components: {
-    Header, Sidebar, InstrumentPanel, SettingsPanel, RecordingPanel, SampleUpload,
+    Header, Sidebar, InstrumentPanel, SettingsPanel, RecordingPanel,
   },
   setup() {
     const instruments        = INSTRUMENTS
@@ -118,23 +113,12 @@ export default {
       audioEngine.stopRecording().then(callback)
     }
 
-    /** Track loaded sample status per instrument/note for badge display */
-    const loadedSamples = reactive({})
-
-    const onSampleLoaded = async (instrument, noteName, arrayBuffer) => {
-      const success = await audioEngine.loadSample(instrument, noteName, arrayBuffer)
-      if (success) {
-        loadedSamples[`${instrument}/${noteName}`] = true
-      }
-    }
-
     return {
       instruments, currentInstrument, lastNote, lastSynthMode,
       paramsReady,
       params, accentColor, accentDim,
       selectInstrument, playNote, muteNote, updateParam, startRecording,
       onRecordingStop,
-      loadedSamples, onSampleLoaded,
     }
   },
 }

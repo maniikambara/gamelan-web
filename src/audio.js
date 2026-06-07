@@ -238,9 +238,6 @@ export class AudioEngine {
     /** Active sources for muting: key → { gainNode, oscillators } */
     this.activeSources = {}
 
-    /** Sample buffers uploaded by user: key `instrument/noteName` → AudioBuffer */
-    this.sampleBuffers = {}
-
     // Recording state
     this.isRecording = false
     this.recordStartTime = 0
@@ -258,37 +255,6 @@ export class AudioEngine {
   resume() {
     this.ensureContext()
     if (this.ctx.state === 'suspended') this.ctx.resume()
-  }
-
-  /**
-   * Decode and store an audio sample for a specific instrument note.
-   * @param {string} instrument
-   * @param {string} noteName
-   * @param {ArrayBuffer} arrayBuffer  — raw bytes from file upload
-   * @returns {Promise<boolean>} true on success
-   */
-  async loadSample(instrument, noteName, arrayBuffer) {
-    this.ensureContext()
-    try {
-      const decoded = await this.ctx.decodeAudioData(arrayBuffer)
-      const key = `${instrument}/${noteName}`
-      this.sampleBuffers[key] = decoded
-      console.info(`[AudioEngine] Sample loaded: ${key}`)
-      return true
-    } catch (err) {
-      console.warn(`[AudioEngine] Failed to decode sample:`, err)
-      return false
-    }
-  }
-
-  /**
-   * Check whether a user-uploaded sample exists for the given note.
-   * @param {string} instrument
-   * @param {string} noteName
-   * @returns {boolean}
-   */
-  hasSample(instrument, noteName) {
-    return !!this.sampleBuffers[`${instrument}/${noteName}`]
   }
 
   // ─── Synthesis Parameters Loading ─────────────────────────────────────────
@@ -333,13 +299,7 @@ export class AudioEngine {
     // Look up specific note parameters if available
     const noteParams = this.synthParams[instrument]?.[noteName]
 
-    let result
-    const sampleBuffer = this.sampleBuffers[key]
-    if (sampleBuffer) {
-      result = this._playSample(sampleBuffer, params)
-    } else {
-      result = this._procedural(instrument, noteIndex, freq, params, noteParams)
-    }
+    const result = this._procedural(instrument, noteIndex, freq, params, noteParams)
     
     if (result) {
       this.activeSources[key] = {
@@ -370,7 +330,7 @@ export class AudioEngine {
       })
     }
 
-    return sampleBuffer ? 'sample' : 'synth'
+    return 'synth'
   }
 
   /**
@@ -410,20 +370,6 @@ export class AudioEngine {
       default:
         return _synthesizers.gangsa(this.ctx, freq, noteParams, params, noteIndex)
     }
-  }
-
-  /** Play a decoded AudioBuffer through the audio graph. */
-  _playSample(buffer, params) {
-    const ctx  = this.ctx
-    const now  = ctx.currentTime
-    const gain = ctx.createGain()
-    gain.gain.setValueAtTime(params.gain || 0.8, now)
-    gain.connect(ctx.destination)
-    const source = ctx.createBufferSource()
-    source.buffer = buffer
-    source.connect(gain)
-    source.start(now)
-    return { gainNode: gain, oscillators: [source] }
   }
 
   // ─── Recording ────────────────────────────────────────────────────────────
