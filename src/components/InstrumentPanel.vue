@@ -51,7 +51,7 @@ export default {
         case 'kendang':
           return 'Keyboard A Tut_muka · S Pak_muka · D Dag_belakang · F Dug_belakang · Klik pada area drum'
         case 'suling':
-          return 'Keyboard Z X C V B N · Klik pada lubang suling'
+          return 'Keyboard 1-0 · Klik tombol nada di atas suling'
         default:
           return ''
       }
