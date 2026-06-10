@@ -1,32 +1,36 @@
 <template>
-  <div class="suling-panel" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+  <div class="suling-panel" style="display: flex; flex-direction: column; align-items: center; width: 100%; gap: 40px; padding-top: 20px;">
 
-    <!-- Top Section: Image and Octave Indicators -->
-    <div
-      style="display: flex; align-self: stretch; justify-content: center; align-items: center; flex-direction: row; gap: 40px; padding-top: 20px; padding-bottom: 30px; border-radius: 0px">
-      <!-- Suling Icon -->
-      <div style="width: 120px; display: flex; justify-content: center;">
-        <img
-          :src="instrument.image"
-          alt="Suling Icon"
-          style="display: block; height: 104px; object-fit: contain; transform: rotate(-90deg);" />
-      </div>
+    <!-- Top Section: Canvas and Indicators -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 40px; width: 100%; flex-wrap: wrap;">
       
+      <!-- Suling Canvas -->
+      <div class="suling-canvas-wrap" style="position: relative;">
+        <canvas
+          ref="canvasRef"
+          class="suling-canvas"
+          :width="canvasW"
+          :height="canvasH"
+          style="display: block; max-width: 100%; height: auto;"
+        />
+      </div>
+
       <!-- Nada Rendah / Tinggi Indicators -->
-      <div
-        style="display: flex; justify-content: flex-start; align-items: flex-start; flex-direction: column; gap: 12px; border-radius: 0px">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
         <div
-          style="width: 187px; display: flex; justify-content: flex-start; align-items: flex-start; flex-direction: column; padding: 11.2px 16px; background: #261D07; border: 1px solid #C8960C; border-radius: 12px">
-          <p
-            style="color: #C8960C; font-size: 14.1px; font-family: Cinzel; text-align: center; font-weight: 700; width: 100%; margin: 0;">
-            Nada Rendah
+          style="width: 187px; padding: 12px 16px; border-radius: 12px; transition: all 0.2s;"
+          :style="isRendahActive ? 'background: rgba(200,150,12,0.2); border: 1px solid #C8960C; box-shadow: 0 0 15px rgba(200,150,12,0.4);' : 'background: #261D07; border: 1px solid rgba(200,150,12,0.3);'"
+        >
+          <p style="color: #C8960C; font-size: 14px; font-family: Cinzel; text-align: center; font-weight: 700; margin: 0; letter-spacing: 1px;">
+            NADA RENDAH
           </p>
         </div>
         <div
-          style="width: 187px; display: flex; justify-content: flex-start; align-items: flex-start; flex-direction: column; padding: 11.2px 16px; background: #261D07; border: 1px solid #C8960C; border-radius: 12px">
-          <p
-            style="color: #C8960C; font-size: 14.1px; font-family: Cinzel; text-align: center; font-weight: 700; width: 100%; margin: 0;">
-            Nada Tinggi
+          style="width: 187px; padding: 12px 16px; border-radius: 12px; transition: all 0.2s;"
+          :style="isTinggiActive ? 'background: rgba(200,150,12,0.2); border: 1px solid #C8960C; box-shadow: 0 0 15px rgba(200,150,12,0.4);' : 'background: #261D07; border: 1px solid rgba(200,150,12,0.3);'"
+        >
+          <p style="color: #C8960C; font-size: 14px; font-family: Cinzel; text-align: center; font-weight: 700; margin: 0; letter-spacing: 1px;">
+            NADA TINGGI
           </p>
         </div>
       </div>
@@ -37,52 +41,41 @@
       ref="imgRef"
       :src="instrument.image"
       style="display:none"
-      @load="drawBothSulings"
+      @load="drawSuling"
     />
 
-    <div style="display: flex; flex-direction: column; gap: 32px; width: 100%; align-items: center; padding-bottom: 20px;">
+    <!-- Bottom Section: Buttons -->
+    <div style="display: flex; flex-direction: column; gap: 32px; align-items: center; width: 100%;">
       
-      <!-- Group 8: Nada Rendah Block -->
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%;">
-        <div class="suling-kbd-strip" style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; max-width: 600px;">
-          <button v-for="note in notesRendah" :key="note.index"
+      <!-- Nada Rendah Buttons (1-5) -->
+      <div class="suling-kbd-strip" style="display: flex; justify-content: center; gap: 32px; flex-wrap: wrap;">
+        <div v-for="note in notesRendah" :key="note.index" style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+          <button
             class="suling-kbd-chip"
             :class="{ active: activeNote === note.index }"
+            style="width: 64px; height: 64px; border-radius: 50%; border: 2px solid #C8960C; background: transparent; color: #C8960C; font-size: 24px; font-family: Cinzel; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: all 0.1s;"
+            :style="activeNote === note.index ? 'background: rgba(200,150,12,0.2); box-shadow: 0 0 15px rgba(200,150,12,0.5); transform: scale(0.95);' : ''"
             @mousedown="playNote(note.index)"
             @touchstart.prevent="playNote(note.index)">
-            <span class="suling-chip-note">{{ note.name }}</span>
-            <kbd class="suling-chip-key">{{ KEYS[note.index] }}</kbd>
+            {{ KEYS[note.index] }}
           </button>
-        </div>
-        <div class="suling-canvas-wrap" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(200,150,12,0.18); border-radius: 12px; padding: 16px;">
-          <canvas
-            ref="canvasRefRendah"
-            class="suling-canvas"
-            :width="canvasW"
-            :height="canvasH"
-          />
+          <span style="color: #aaa; font-family: Cinzel; font-size: 14px; letter-spacing: 1px;">{{ note.name.split(' ')[0].toUpperCase() }}</span>
         </div>
       </div>
 
-      <!-- Group 9: Nada Tinggi Block -->
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%;">
-        <div class="suling-kbd-strip" style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; max-width: 600px;">
-          <button v-for="note in notesTinggi" :key="note.index"
+      <!-- Nada Tinggi Buttons (6-0) -->
+      <div class="suling-kbd-strip" style="display: flex; justify-content: center; gap: 32px; flex-wrap: wrap;">
+        <div v-for="note in notesTinggi" :key="note.index" style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+          <button
             class="suling-kbd-chip"
             :class="{ active: activeNote === note.index }"
+            style="width: 64px; height: 64px; border-radius: 50%; border: 2px solid #C8960C; background: transparent; color: #C8960C; font-size: 24px; font-family: Cinzel; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: all 0.1s;"
+            :style="activeNote === note.index ? 'background: rgba(200,150,12,0.2); box-shadow: 0 0 15px rgba(200,150,12,0.5); transform: scale(0.95);' : ''"
             @mousedown="playNote(note.index)"
             @touchstart.prevent="playNote(note.index)">
-            <span class="suling-chip-note">{{ note.name }}</span>
-            <kbd class="suling-chip-key">{{ KEYS[note.index] }}</kbd>
+            {{ KEYS[note.index] }}
           </button>
-        </div>
-        <div class="suling-canvas-wrap" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(200,150,12,0.18); border-radius: 12px; padding: 16px;">
-          <canvas
-            ref="canvasRefTinggi"
-            class="suling-canvas"
-            :width="canvasW"
-            :height="canvasH"
-          />
+          <span style="color: #aaa; font-family: Cinzel; font-size: 14px; letter-spacing: 1px;">{{ note.name.split(' ')[0].toUpperCase() }}</span>
         </div>
       </div>
 
@@ -103,19 +96,22 @@ export default {
   },
   emits: ['play-note'],
   setup(props, { emit }) {
-    const canvasRefRendah = ref(null)
-    const canvasRefTinggi = ref(null)
-    const imgRef          = ref(null)
-    const activeNote      = ref(null)
+    const canvasRef = ref(null)
+    const imgRef    = ref(null)
+    const activeNote = ref(null)
 
     const notesRendah = computed(() => props.instrument.notes.slice(0, 5))
     const notesTinggi = computed(() => props.instrument.notes.slice(5, 10))
+
+    const isRendahActive = computed(() => activeNote.value !== null && activeNote.value < 5)
+    const isTinggiActive = computed(() => activeNote.value !== null && activeNote.value >= 5)
 
     // Canvas is landscape: (imgH × imgW) 
     const canvasW = computed(() => props.instrument.imgH ?? 688)   // 688
     const canvasH = computed(() => props.instrument.imgW ?? 387)   // 387
 
-    const drawSingleCanvas = (canvas, isActiveOctave) => {
+    const drawSuling = () => {
+      const canvas = canvasRef.value
       const img = imgRef.value
       if (!canvas || !img) return
       const ctx = canvas.getContext('2d')
@@ -134,43 +130,40 @@ export default {
       const holeCX = props.instrument.holeCX             // 196 in original image
 
       const note = activeNote.value !== null ? props.instrument.notes[activeNote.value] : null
-      // Only show closed holes if the note belongs to this octave's canvas
-      const closedHoles = (note && isActiveOctave) ? note.closedHoles : []
+      const closedHoles = note ? note.closedHoles : []
 
       props.instrument.holeY.forEach((hy, i) => {
         // Original (holeCX, hy) → display (hy*scaleW, (imgW-holeCX)*scaleH)
         const dx = hy * scaleW
         const dy = (img.naturalWidth - holeCX) * scaleH
-        const r  = props.instrument.hitRadius * Math.min(scaleW, scaleH)
+        const baseR = props.instrument.hitRadius * Math.min(scaleW, scaleH)
 
         const isClosed = closedHoles.includes(i)
         
         ctx.beginPath()
-        ctx.arc(dx, dy, r, 0, Math.PI * 2)
         
         if (isClosed) {
-          ctx.fillStyle   = 'rgba(126,200,80,0.65)'
-          ctx.strokeStyle = 'rgba(126,200,80,1)'
+          // Indikator lubangnya ditekan buat warna merah dengan ukuran yang kecil
+          const r = baseR * 0.4
+          ctx.arc(dx, dy, r, 0, Math.PI * 2)
+          ctx.fillStyle   = 'rgba(220, 38, 38, 0.9)' // Red color
+          ctx.strokeStyle = 'rgba(220, 38, 38, 1)'
+          ctx.lineWidth = 2
         } else {
-          ctx.fillStyle   = 'rgba(126,200,80,0.05)'
-          ctx.strokeStyle = 'rgba(126,200,80,0.2)'
+          // Not pressed: faint outline or nothing
+          const r = baseR * 0.8
+          ctx.arc(dx, dy, r, 0, Math.PI * 2)
+          ctx.fillStyle   = 'rgba(0, 0, 0, 0.0)'
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'
+          ctx.lineWidth = 1
         }
         
-        ctx.lineWidth = isClosed ? 2 : 1
         ctx.fill()
         ctx.stroke()
       })
     }
 
-    const drawBothSulings = () => {
-      const isRendah = activeNote.value !== null && activeNote.value < 5
-      const isTinggi = activeNote.value !== null && activeNote.value >= 5
-
-      drawSingleCanvas(canvasRefRendah.value, isRendah)
-      drawSingleCanvas(canvasRefTinggi.value, isTinggi)
-    }
-
-    watch(activeNote, () => drawBothSulings())
+    watch(activeNote, () => drawSuling())
 
     const playNote = (i) => {
       if (i == null || i < 0) return
@@ -197,7 +190,7 @@ export default {
     onMounted(() => {
       window.addEventListener('keydown', onKeyDown)
       nextTick(() => {
-        if (imgRef.value?.complete) drawBothSulings()
+        if (imgRef.value?.complete) drawSuling()
       })
     })
 
@@ -206,9 +199,9 @@ export default {
     })
 
     return { 
-      canvasRefRendah, canvasRefTinggi, imgRef, 
+      canvasRef, imgRef, 
       canvasW, canvasH, KEYS, activeNote, 
-      notesRendah, notesTinggi, playNote, drawBothSulings 
+      notesRendah, notesTinggi, isRendahActive, isTinggiActive, playNote, drawSuling 
     }
   },
 }
