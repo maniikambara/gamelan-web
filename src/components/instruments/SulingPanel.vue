@@ -1,33 +1,91 @@
 <template>
-  <div class="suling-panel">
+  <div class="suling-panel" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
 
-    <!-- Keyboard hint strip -->
-    <div class="suling-kbd-strip">
-      <button v-for="(note, i) in instrument.notes" :key="i"
-        class="suling-kbd-chip"
-        :class="{ active: activeNote === i }"
-        @mousedown="playNote(i)"
-        @touchstart.prevent="playNote(i)">
-        <span class="suling-chip-note">{{ note.name }}</span>
-        <kbd class="suling-chip-key">{{ KEYS[i] }}</kbd>
-      </button>
+    <!-- Top Section: Image and Octave Indicators -->
+    <div
+      style="display: flex; align-self: stretch; justify-content: center; align-items: center; flex-direction: row; gap: 40px; padding-top: 20px; padding-bottom: 30px; border-radius: 0px">
+      <!-- Suling Icon -->
+      <div style="width: 120px; display: flex; justify-content: center;">
+        <img
+          :src="instrument.image"
+          alt="Suling Icon"
+          style="display: block; height: 104px; object-fit: contain; transform: rotate(-90deg);" />
+      </div>
+      
+      <!-- Nada Rendah / Tinggi Indicators -->
+      <div
+        style="display: flex; justify-content: flex-start; align-items: flex-start; flex-direction: column; gap: 12px; border-radius: 0px">
+        <div
+          style="width: 187px; display: flex; justify-content: flex-start; align-items: flex-start; flex-direction: column; padding: 11.2px 16px; background: #261D07; border: 1px solid #C8960C; border-radius: 12px">
+          <p
+            style="color: #C8960C; font-size: 14.1px; font-family: Cinzel; text-align: center; font-weight: 700; width: 100%; margin: 0;">
+            Nada Rendah
+          </p>
+        </div>
+        <div
+          style="width: 187px; display: flex; justify-content: flex-start; align-items: flex-start; flex-direction: column; padding: 11.2px 16px; background: #261D07; border: 1px solid #C8960C; border-radius: 12px">
+          <p
+            style="color: #C8960C; font-size: 14.1px; font-family: Cinzel; text-align: center; font-weight: 700; width: 100%; margin: 0;">
+            Nada Tinggi
+          </p>
+        </div>
+      </div>
     </div>
 
-    <!-- Suling image displayed horizontally via canvas -->
-    <div class="suling-canvas-wrap">
-      <canvas
-        ref="canvasRef"
-        class="suling-canvas"
-        :width="canvasW"
-        :height="canvasH"
-      />
-      <!-- Hidden img used for drawImage -->
-      <img
-        ref="imgRef"
-        :src="instrument.image"
-        style="display:none"
-        @load="drawSuling"
-      />
+    <!-- Hidden img used for drawImage -->
+    <img
+      ref="imgRef"
+      :src="instrument.image"
+      style="display:none"
+      @load="drawBothSulings"
+    />
+
+    <div style="display: flex; flex-direction: column; gap: 32px; width: 100%; align-items: center; padding-bottom: 20px;">
+      
+      <!-- Group 8: Nada Rendah Block -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%;">
+        <div class="suling-kbd-strip" style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; max-width: 600px;">
+          <button v-for="note in notesRendah" :key="note.index"
+            class="suling-kbd-chip"
+            :class="{ active: activeNote === note.index }"
+            @mousedown="playNote(note.index)"
+            @touchstart.prevent="playNote(note.index)">
+            <span class="suling-chip-note">{{ note.name }}</span>
+            <kbd class="suling-chip-key">{{ KEYS[note.index] }}</kbd>
+          </button>
+        </div>
+        <div class="suling-canvas-wrap" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(200,150,12,0.18); border-radius: 12px; padding: 16px;">
+          <canvas
+            ref="canvasRefRendah"
+            class="suling-canvas"
+            :width="canvasW"
+            :height="canvasH"
+          />
+        </div>
+      </div>
+
+      <!-- Group 9: Nada Tinggi Block -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%;">
+        <div class="suling-kbd-strip" style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; max-width: 600px;">
+          <button v-for="note in notesTinggi" :key="note.index"
+            class="suling-kbd-chip"
+            :class="{ active: activeNote === note.index }"
+            @mousedown="playNote(note.index)"
+            @touchstart.prevent="playNote(note.index)">
+            <span class="suling-chip-note">{{ note.name }}</span>
+            <kbd class="suling-chip-key">{{ KEYS[note.index] }}</kbd>
+          </button>
+        </div>
+        <div class="suling-canvas-wrap" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(200,150,12,0.18); border-radius: 12px; padding: 16px;">
+          <canvas
+            ref="canvasRefTinggi"
+            class="suling-canvas"
+            :width="canvasW"
+            :height="canvasH"
+          />
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -45,18 +103,20 @@ export default {
   },
   emits: ['play-note'],
   setup(props, { emit }) {
-    const canvasRef = ref(null)
-    const imgRef    = ref(null)
-    const activeNote = ref(null)
+    const canvasRefRendah = ref(null)
+    const canvasRefTinggi = ref(null)
+    const imgRef          = ref(null)
+    const activeNote      = ref(null)
+
+    const notesRendah = computed(() => props.instrument.notes.slice(0, 5))
+    const notesTinggi = computed(() => props.instrument.notes.slice(5, 10))
 
     // Canvas is landscape: (imgH × imgW) 
     const canvasW = computed(() => props.instrument.imgH ?? 688)   // 688
     const canvasH = computed(() => props.instrument.imgW ?? 387)   // 387
 
-    // Draw suling image rotated -90° into the landscape canvas
-    const drawSuling = () => {
-      const canvas = canvasRef.value
-      const img    = imgRef.value
+    const drawSingleCanvas = (canvas, isActiveOctave) => {
+      const img = imgRef.value
       if (!canvas || !img) return
       const ctx = canvas.getContext('2d')
       ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -74,7 +134,8 @@ export default {
       const holeCX = props.instrument.holeCX             // 196 in original image
 
       const note = activeNote.value !== null ? props.instrument.notes[activeNote.value] : null
-      const closedHoles = note ? note.closedHoles : []
+      // Only show closed holes if the note belongs to this octave's canvas
+      const closedHoles = (note && isActiveOctave) ? note.closedHoles : []
 
       props.instrument.holeY.forEach((hy, i) => {
         // Original (holeCX, hy) → display (hy*scaleW, (imgW-holeCX)*scaleH)
@@ -101,7 +162,15 @@ export default {
       })
     }
 
-    watch(activeNote, () => drawSuling())
+    const drawBothSulings = () => {
+      const isRendah = activeNote.value !== null && activeNote.value < 5
+      const isTinggi = activeNote.value !== null && activeNote.value >= 5
+
+      drawSingleCanvas(canvasRefRendah.value, isRendah)
+      drawSingleCanvas(canvasRefTinggi.value, isTinggi)
+    }
+
+    watch(activeNote, () => drawBothSulings())
 
     const playNote = (i) => {
       if (i == null || i < 0) return
@@ -128,7 +197,7 @@ export default {
     onMounted(() => {
       window.addEventListener('keydown', onKeyDown)
       nextTick(() => {
-        if (imgRef.value?.complete) drawSuling()
+        if (imgRef.value?.complete) drawBothSulings()
       })
     })
 
@@ -136,7 +205,11 @@ export default {
       window.removeEventListener('keydown', onKeyDown)
     })
 
-    return { canvasRef, imgRef, canvasW, canvasH, KEYS, activeNote, playNote, drawSuling }
+    return { 
+      canvasRefRendah, canvasRefTinggi, imgRef, 
+      canvasW, canvasH, KEYS, activeNote, 
+      notesRendah, notesTinggi, playNote, drawBothSulings 
+    }
   },
 }
 </script>
