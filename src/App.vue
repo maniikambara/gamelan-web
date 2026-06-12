@@ -68,7 +68,7 @@ export default {
     const params = reactive({
       gangsa:  { resonance: 0.5, gain: 0.8, ombak: 8, release_ms: 2000 },
       kendang: { resonance: 0.4, gain: 0.8, depth: 0.6, dryness: 0.7, release_ms: 160 },
-      suling:  { resonance: 0.4, gain: 0.8, breath: 0.2, attack_ms: 90, release_ms: 600 },
+      suling:  { resonance: 0.4, gain: 0.8, breath: 0.05, attack_ms: 90, release_ms: 600 },
     })
 
     const accentColor = computed(() => instruments[currentInstrument.value].color)
