@@ -1,82 +1,160 @@
 # Gamelan Bali Synthesizer
 
-Gamelan Bali Synthesizer adalah aplikasi interaktif berbasis web yang dibangun menggunakan Vue 3 dan Python (FastAPI). Aplikasi ini bertujuan untuk mereproduksi suara tiga instrumen tradisional Bali — Gangsa, Kendang, dan Suling — melalui kombinasi sampel audio dan sintesis prosedural di sisi klien (Web Audio API).
+Aplikasi web interaktif yang mereproduksi suara tiga instrumen tradisional Bali — Gangsa, Kendang, dan Suling — melalui sintesis prosedural penuh di sisi klien menggunakan Web Audio API. Parameter akustik (harmonik, ombak, envelope) dihasilkan dari analisis sampel audio nyata oleh backend Python dan disimpan dalam `synthesis_params.json`.
 
 ## Ringkasan Proyek
 
-Proyek ini merupakan karya akademis oleh Kelompok 1, Program Studi Teknik Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana (2026). Sistem ini menyajikan pengalaman bermain instrumen secara virtual dengan pemodelan akustik yang akurat, pengaturan waktu nyata, serta antarmuka yang responsif.
+Proyek akademis oleh Kelompok 1, Program Studi Teknik Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026. Sistem menyajikan pengalaman bermain instrumen gamelan secara virtual dengan pemodelan akustik berbasis data, antarmuka interaktif keyboard dan sentuh, serta kemampuan ekspor rekaman sesi ke format WAV.
 
 ## Fitur Utama
 
-1. **Sintesis Audio Prosedural & Sampel**
-   Sistem mensintesis suara menggunakan *Web Audio API* di peramban tanpa latensi. Karakteristik suara didasarkan pada hasil analisis parameter akustik dari file sampel (dikelola oleh *backend* Python).
+**Sintesis Audio Prosedural**
+Seluruh suara dihasilkan secara real-time di peramban tanpa mengunduh file audio. Engine membaca parameter akustik dari backend (rasio harmonik, frekuensi ombak, ADSR per nada) dan merender suara menggunakan Web Audio API. Jika backend tidak tersedia, engine jatuh ke parameter default yang dikodekan di `audio.js`.
 
-2. **Instrumen yang Tersedia**
-   - **Gangsa:** Metalofon dengan sepuluh bilah berlaras pelog. Dilengkapi efek detuning (ombak) untuk menciptakan resonansi khas.
-   - **Kendang:** Drum bermembran ganda dengan empat jenis pukulan autentik (Tut, Pak, Dag, Dug).
-   - **Suling Bali:** Seruling bambu dengan sepuluh nada (lima rendah, lima tinggi). Mensimulasikan hembusan napas dan vibrato.
+**Instrumen**
 
-3. **Penyesuaian Parameter secara Waktu Nyata**
-   Pengguna dapat menyesuaikan volume, resonansi, *release*, *attack*, *depth*, *dryness*, hingga intensitas hembusan napas (khusus suling). Efek akan langsung diterapkan pada nada yang dimainkan berikutnya.
+Gangsa: metalofon bilah logam dengan sepuluh nada laras pelog selisir. Mensintesis suara menggunakan penjumlahan parsial inharmonik dengan pasangan ombak (detuning). Keyboard Q-P.
 
-4. **Rekaman Sesi (Export WAV)**
-   Sesi permainan dapat direkam secara langsung di peramban. Sistem mencampur (*mix*) nada-nada yang dimainkan lalu menyediakannya dalam format berkas audio `.wav` untuk diunduh.
+Kendang: drum bermembran ganda dengan empat jenis pukulan autentik (Tut, Pak, Dag, Dug). Klik pada area lingkaran untuk memilih zona tengah atau tepi. Keyboard A, S, D, F.
 
-5. **Pengunggahan Sampel Kustom**
-   Memungkinkan pengguna mengunggah berkas `.wav` atau `.mp3` ke server untuk digunakan sebagai suara instrumen pengganti pada saat berjalan (*runtime*).
+Suling Bali: seruling bambu dengan sepuluh nada pelog dalam dua oktaf. Model suara mencakup tiga harmonik, noise hembusan Gaussian terfilter bandpass, dan vibrato 5.5 Hz. Keyboard 1-0.
 
-## Model Sintesis Instrumen
+**Parameter Real-Time**
+Volume, resonansi, release, attack, kedalaman nada (Kendang Tut), kekeringan pukulan (Kendang Pak), intensitas hembusan napas (Suling). Semua perubahan langsung berlaku pada nada berikutnya.
 
-### 1. Sintesis Instrumen Gangsa
-Sintesis Gangsa pada backend menggunakan penjumlahan aditif parsial inharmonik yang mencerminkan karakter akustik bronzephone gamelan Bali. Berdasarkan penelitian Jones et al. (Journal of the Acoustical Society of America, 2010), rasio parsial bilah gangsa bervariasi per register: untuk nada besar (bilah rendah) digunakan rasio [1.0, 2.76, 5.18] hingga lebih banyak parsial, sedangkan bilah nada kecil (tinggi) memiliki lebih sedikit parsial [1.0, 2.61, 4.80]. Parameter ombak diimplementasikan sebesar default 8 Hz (rentang 5-10 Hz sesuai data Toth Archives, Vitale & Sethares 2021) dengan mencampurkan salinan frekuensi yang di-detune sebesar nilai ombak. Octave stretching sebesar +8 hingga +12 cents diterapkan pada nada kecil agar ombak tetap konstan di seluruh rentang. Filter bandpass IIR orde pertama diterapkan di sekitar frekuensi fundamental untuk menambah resonansi.
+**Rekaman dan Ekspor WAV**
+Rekam sesi permainan secara langsung. Sistem me-render ulang seluruh nada secara prosedural dan mencampurnya ke dalam satu track, kemudian mengekspor sebagai file `.wav` yang dapat diunduh.
 
-Ketika pengguna mengklik salah satu bilah Gangsa, sistem akan menghasilkan suara berdasarkan frekuensi nada yang sudah ditentukan sebelumnya. Selain itu, sistem juga memberikan efek sustain dan resonansi agar suara terdengar lebih mirip dengan instrumen aslinya. Karakteristik sintesis Gangsa:
-- **Attack sangat cepat:** 1–5 ms (mallet/panggul keras menghasilkan attack terang).
-- **Decay:** 80–150 ms, sustain 40–50% (bilah bronzephone beresonansi bebas hingga 4 detik jika tidak diredam).
-- **Release:** dikontrol pengguna melalui slider damping (simulasi teknik tangan meredam bilah).
-- **Efek ombak:** frekuensi denyutan konstan 8 Hz (default; slider 5–10 Hz) pada seluruh pasangan bilah pengisep-pengumbang, dijaga konstan agar karakteristik ombak autentik terhadap semua register.
+**Unggah Sampel Kustom**
+Upload file `.wav` atau `.mp3` ke endpoint backend untuk menggantikan suara instrumen pada saat runtime.
 
-### 2. Sintesis Instrumen Kendang
-Sintesis Kendang Bali menggunakan terminologi pukulan autentik berdasarkan glossary Andrew McGraw (Balinese Music Glossary, 2013). Terdapat empat jenis pukulan yang dimodelkan: Tut (pukulan tengah kepala kecil lanang, nada tinggi tonal), Pak (pukulan tepi/slap kepala lanang, karakter tajam impulsif), Dag (pukulan terbuka kepala besar wadon, nada rendah resonan), Dug (pukulan dalam kepala wadon, nada sangat rendah). Tut dan Pak disintesiskan dengan campuran komponen tonal sin(2πft) + 0.4·sin(2π·1.5ft) dengan noise Gaussian yang difilter bandpass dari 0.4f hingga 2.2f (parameter depth/dryness mengontrol perbandingan). Dag dan Dug menggunakan komponen tonal dominan dengan pitch-glide menurun yang mencirikan membran besar yang meluruh setelah dipukul.
+## Arsitektur Sistem
 
-Tut menghasilkan suara nada tinggi yang jernih (ADSR: 3ms/50ms/8%/180ms). Pak menghasilkan suara tajam impulsif seperti slap (ADSR: 2ms/18ms/2%/80ms). Dag menghasilkan suara rendah dan resonan (ADSR: 5ms/60ms/12%/200ms). Dug menghasilkan suara bass paling dalam (ADSR: 4ms/40ms/5%/120ms).
-- **Attack sangat cepat:** 2–5 ms (karakteristik instrumen perkusi membran).
-- **Sustain sangat pendek:** 2–12% (sesuai karakter perkusif, suara langsung meluruh).
-- **Karakter suara:** Tut/Pak bersifat perkusif tonal (kepala lanang/kecil); Dag/Dug bersifat perkusif bass resonan (kepala wadon/besar).
-- **Release:** dikontrol pengguna melalui slider parameter; Dag/Dug memiliki release lebih panjang untuk suara resonan wadon.
+```
+Frontend (Vue 3 + Vite)                    Backend (Python + FastAPI)
+┌─────────────────────────────┐            ┌──────────────────────────────┐
+│ App.vue                     │  /api/     │ api/index.py                 │
+│   Sidebar ── instrument nav │ ─────────▶ │   GET /api/analysis          │
+│   InstrumentPanel           │            │   GET /api/instruments       │
+│     GangsaPanel             │            │   POST /api/samples/{i}/{n}  │
+│     KendangPanel            │            │   GET /api/samples/{i}/{n}   │
+│     SulingPanel             │            │   POST /api/synthesize       │
+│   SettingsPanel ── sliders  │            │   POST /api/export-recording │
+│   RecordingPanel            │            │   GET /api/health            │
+│                             │            │                              │
+│ audio.js (AudioEngine)      │            │ analyze_samples.py           │
+│   Web Audio API synthesis   │            │   analisis FFT sampel audio  │
+│   WAV export (offline)      │            │   → synthesis_params.json    │
+│   Recording event log       │            │                              │
+│ instruments.js              │            │ api/samples/                 │
+│   frekuensi, konfigurasi    │            │   gangsa/, kendang/, suling/ │
+└─────────────────────────────┘            └──────────────────────────────┘
+```
 
-### 3. Sintesis Instrumen Suling Bali
-Sintesis Suling Bali menggunakan model akustik tabung bambu silindris dalam laras pelog selisir. Berdasarkan revisi yang dilakukan menggunakan referensi video YouTube sebagai patokan akustik, sistem kini mendukung 10 nada dalam dua oktaf pelog selisir: Deng 1 (558 Hz), Dung 1 (621 Hz), Dang 1 (764 Hz), Ding 1 (800 Hz), Dong 1 (1024 Hz) untuk oktaf pertama; Deng 2 (1116 Hz), Dung 2 (1242 Hz), Dang 2 (1528 Hz), Ding 2 (1600 Hz), Dong 2 (2048 Hz) untuk oktaf kedua. Frekuensi-frekuensi ini menggunakan interval pelog selisir yang sama dengan gangsa, sehingga suling dan gangsa selaras dalam satu sistem pelog. Model suara menggunakan tiga komponen harmonik (fundamental f, 2f dengan amplitudo 22%, 3f dengan amplitudo 5%) ditambah noise hembusan Gaussian yang difilter bandpass dari 0,7f hingga min(4f, 8.000 Hz) dengan standar deviasi 0,18.
-- **Attack lembut:** 100–120 ms (karakteristik instrumen tiup bambu end-blown dengan embouchure halus).
-- **Sustain panjang:** 88% (nada dipertahankan selama ditiup).
-- **Tiga harmonik:** fundamental (f), oktaf kedua (2f, 22%), twelfth/duodecim (3f, 5%) — mencirikan bore silindris bambu.
-- **Noise hembusan:** σ = 0,18, filter bandpass Gaussian dari 0,7f hingga min(4f, 8.000 Hz); suling bambu memiliki karakter breathy yang khas dibanding flute Barat. Intensitas noise dikontrol parameter breath yang tersedia di panel pengaturan.
+## Model Sintesis
 
-## Struktur Arsitektur
+### Gangsa
+Penjumlahan aditif parsial inharmonik. Bilah nada besar (indeks 0-4) menggunakan rasio `[1.0, 2.76, 5.18]`; bilah nada kecil (indeks 5-9) menggunakan `[1.0, 2.61, 4.80]`. Ombak diimplementasikan sebagai salinan parsial yang di-detune sebesar `ombak_hz` (default 8 Hz). Resonansi dikontrol melalui peaking EQ terpusat di frekuensi fundamental. ADSR khas: attack 1-12 ms, sustain 40-50%, release dikontrol pengguna.
 
-- **Frontend (Vue 3 + Vite):** Mengelola antarmuka pengguna interaktif, menangani interaksi mouse/sentuh/papan ketik, memproses pengaturan audio, serta menjalankan sintesis suara lokal dengan Web Audio API.
-- **Backend (Python + FastAPI):** Menjalankan fungsi analisis akustik dari sampel (`api/analyze_samples.py`), melayani endpoint pengambilan sampel, mengurus unggahan sampel kustom, serta mencampur hasil *export* rekaman di sisi server.
+### Kendang
+Empat pukulan dimodelkan terpisah berdasarkan terminologi McGraw (2013):
 
-## Cara Menjalankan Aplikasi di Lingkungan Lokal
+- **Tut** (kepala lanang, tengah): tonal `sin(2πft) + 0.28·sin(2π·1.5ft)` dicampur noise bandpass, dikontrol parameter `depth`. ADSR 3/50/8%/180 ms.
+- **Pak** (kepala lanang, tepi): noise bandpass dikontrol `dryness` dengan komponen transien klik. ADSR 2/18/2%/80 ms.
+- **Dag** (kepala wadon, terbuka): pitch-glide menurun dari f0 ke 0.6·f0 dengan lowpass filter. ADSR 5/60/12%/200 ms.
+- **Dug** (kepala wadon, dalam): pitch-glide bass lebih curam dari f0 ke 0.5·f0. ADSR 4/40/5%/120 ms.
 
-**1. Persiapan Frontend**
-Pastikan Node.js telah terinstal, kemudian jalankan:
+### Suling Bali
+Model tabung bambu silindris, 10 nada pelog selisir dalam dua oktaf (558-2048 Hz). Tiga harmonik (f, 2f@22%, 3f@5%) ditambah noise Gaussian berfilter bandpass (0.7f hingga min(4f, 8000 Hz)) sebagai karakter hembusan. Vibrato 5.5 Hz, kedalaman ±1.2% f0. Attack lembut 100-120 ms, sustain 88%. Resonansi diterapkan sebagai lowpass filter yang menggeser cutoff relatif terhadap frekuensi dasar.
+
+## Cara Menjalankan
+
+### Prasyarat
+- Node.js 18 ke atas
+- Python 3.10 ke atas
+- `ffmpeg` (opsional, untuk dukungan upload MP3)
+
+### Frontend
+
 ```bash
 npm install
 npm run dev
 ```
 
-**2. Persiapan Backend**
-Aplikasi backend membutuhkan Python versi terbaru. Buka terminal baru, masuk ke direktori `api`, pasang dependensi, lalu jalankan server pengembangan:
+Dev server Vite berjalan di `http://localhost:5173`. Semua request ke `/api` di-proxy otomatis ke `http://localhost:8000`.
+
+### Backend
+
+Buka terminal terpisah:
+
 ```bash
 cd api
 pip install -r requirements.txt
-python ../run_api.py
+cd ..
+python run_api.py
 ```
 
-Server frontend akan berjalan secara otomatis melalui Vite, dan backend API akan melayani pemintaan pada porta `8000`.
+API berjalan di `http://localhost:8000`. Endpoint `/api/analysis` menyajikan `synthesis_params.json` yang dihasilkan oleh `analyze_samples.py`.
+
+### Menghasilkan Parameter Sintesis dari Sampel
+
+Jika ada sampel audio di `api/samples/{instrument}/`:
+
+```bash
+cd api
+python analyze_samples.py
+```
+
+Output: `api/synthesis_params.json` berisi parameter FFT per nada (f0, rasio harmonik, amplitudo, ombak, ADSR).
+
+### Build Produksi
+
+```bash
+npm run build
+```
+
+Output di `dist/`. Untuk deployment ke Vercel, konfigurasi sudah tersedia di `vercel.json`.
+
+## Struktur File
+
+```
+gamelan-web/
+├── src/
+│   ├── App.vue                          # Root komponen, state management
+│   ├── audio.js                         # AudioEngine: sintesis, rekaman, WAV export
+│   ├── instruments.js                   # Konfigurasi nada, frekuensi, deteksi klik
+│   ├── main.js                          # Entry point Vue 3
+│   ├── style.css                        # Global styles
+│   └── components/
+│       ├── Header.vue
+│       ├── Sidebar.vue
+│       ├── InstrumentPanel.vue          # Router ke panel per instrumen
+│       ├── SettingsPanel.vue            # Slider parameter audio
+│       ├── RecordingPanel.vue           # Kontrol rekaman + download WAV
+│       └── instruments/
+│           ├── GangsaPanel.vue          # Bilah gangsa interaktif dengan keyboard
+│           ├── KendangPanel.vue         # Dua muka drum dengan canvas hit detection
+│           └── SulingPanel.vue          # Canvas suling + tombol nada + visualisasi lubang
+├── api/
+│   ├── index.py                         # FastAPI: synthesis, sample management, export
+│   ├── analyze_samples.py               # FFT analysis → synthesis_params.json
+│   ├── synthesis_params.json            # Parameter akustik per nada (hasil analisis)
+│   ├── requirements.txt                 # Dependensi Python
+│   ├── samples/                         # Sampel audio default per instrumen
+│   └── SAMPLES_README.md
+├── public/assets/                       # Gambar instrumen (PNG, SVG)
+├── assets/                              # Source asset sebelum build
+├── vite.config.js                       # Konfigurasi Vite + proxy dev
+├── vercel.json                          # Konfigurasi deployment Vercel
+└── run_api.py                           # Entry point uvicorn untuk dev
+```
+
+## Dependensi
+
+**Frontend**: Vue 3.4, Vite 6.0, @vitejs/plugin-vue 5.0
+
+**Backend**: FastAPI, uvicorn, numpy, scipy, pydub (opsional, untuk MP3)
 
 ## Kredit
 
-Dikembangkan oleh **Kelompok 1**, Program Studi Teknik Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026.
-Dibangun dengan Vue 3, Vite, FastAPI, NumPy, SciPy, dan Pydub.
+Dikembangkan oleh Kelompok 1, Program Studi Teknik Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026.

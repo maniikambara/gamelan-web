@@ -66,6 +66,9 @@ export default {
     }
 
     const clearRec = () => {
+      if (recordedUrl.value) {
+        URL.revokeObjectURL(recordedUrl.value)
+      }
       recordedUrl.value = null
       elapsedTime.value = 0
     }

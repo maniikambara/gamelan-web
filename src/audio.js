@@ -40,7 +40,20 @@ const _synthesizers = {
     master.gain.linearRampToValueAtTime((userParams.gain || 0.8), now + attackSec)
     // Release
     master.gain.setTargetAtTime(0, now + attackSec + 0.05, dur / 4)
-    master.connect(ctx.destination)
+
+    // Resonance: peaking EQ centered at f0; gain and Q scale with the slider
+    const resonance = userParams.resonance ?? 0.5
+    if (resonance > 0.01) {
+      const peakEq = ctx.createBiquadFilter()
+      peakEq.type = 'peaking'
+      peakEq.frequency.value = f0
+      peakEq.gain.value = resonance * 10       // up to +10 dB at f0
+      peakEq.Q.value = 1 + resonance * 9       // Q 1–10: sharper with more resonance
+      master.connect(peakEq)
+      peakEq.connect(ctx.destination)
+    } else {
+      master.connect(ctx.destination)
+    }
 
     const oscs = []
 
@@ -81,7 +94,9 @@ const _synthesizers = {
     // Tut: kepala lanang muka tengah — tonal + bandpass noise, ADSR 3/50/8%/180
     if (noteIndex === 0) {
       const adsr   = noteParams?.adsr || { attack_ms: 3, decay_ms: 50, sustain: 0.08, release_ms: 180 }
-      const dur    = (adsr.attack_ms + adsr.decay_ms + adsr.release_ms) / 1000
+      const relMs  = userParams.release_ms ?? adsr.release_ms
+      const dur    = (adsr.attack_ms + adsr.decay_ms + relMs) / 1000
+      const depth  = userParams.depth ?? 0.6
       const master = ctx.createGain()
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
@@ -90,23 +105,41 @@ const _synthesizers = {
 
       const osc1 = ctx.createOscillator(); const g1 = ctx.createGain()
       osc1.type = 'sine'; osc1.frequency.value = f0
-      g1.gain.value = 0.7
+      g1.gain.value = 0.7 * depth
       osc1.connect(g1); g1.connect(master)
       osc1.start(now); osc1.stop(now + dur + 0.1)
 
       const osc2 = ctx.createOscillator(); const g2 = ctx.createGain()
       osc2.type = 'sine'; osc2.frequency.value = f0 * 1.5
-      g2.gain.value = 0.28
+      g2.gain.value = 0.28 * depth
       osc2.connect(g2); g2.connect(master)
       osc2.start(now); osc2.stop(now + dur + 0.1)
 
-      return { gainNode: master, oscillators: [osc1, osc2] }
+      const oscs = [osc1, osc2]
+      if (depth < 0.99) {
+        const nFrames = Math.ceil(dur * ctx.sampleRate)
+        const noiseBuf = ctx.createBuffer(1, nFrames, ctx.sampleRate)
+        const nd = noiseBuf.getChannelData(0)
+        for (let i = 0; i < nFrames; i++) nd[i] = Math.random() * 2 - 1
+        const ns = ctx.createBufferSource()
+        ns.buffer = noiseBuf
+        const bpf = ctx.createBiquadFilter()
+        bpf.type = 'bandpass'; bpf.frequency.value = f0 * 1.3; bpf.Q.value = 1.0
+        const ng = ctx.createGain()
+        ng.gain.value = (1 - depth) * 0.4
+        ns.connect(bpf); bpf.connect(ng); ng.connect(master)
+        ns.start(now); ns.stop(now + dur + 0.1)
+        oscs.push(ns)
+      }
+      return { gainNode: master, oscillators: oscs }
     }
 
     // Pak: kepala lanang muka tepi — impulsif tajam, ADSR 2/18/2%/80
     if (noteIndex === 1) {
-      const adsr = noteParams?.adsr || { attack_ms: 2, decay_ms: 18, sustain: 0.02, release_ms: 80 }
-      const dur  = (adsr.attack_ms + adsr.decay_ms + adsr.release_ms) / 1000
+      const adsr    = noteParams?.adsr || { attack_ms: 2, decay_ms: 18, sustain: 0.02, release_ms: 80 }
+      const relMs   = userParams.release_ms ?? adsr.release_ms
+      const dur     = (adsr.attack_ms + adsr.decay_ms + relMs) / 1000
+      const dryness = userParams.dryness ?? 0.7
       const master = ctx.createGain()
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
@@ -121,15 +154,27 @@ const _synthesizers = {
       noiseSource.buffer = noiseBuffer
       const filter = ctx.createBiquadFilter()
       filter.type = 'bandpass'; filter.frequency.value = f0 * 1.8; filter.Q.value = 0.8
-      noiseSource.connect(filter); filter.connect(master)
+      const noiseGain = ctx.createGain()
+      noiseGain.gain.value = dryness
+      noiseSource.connect(filter); filter.connect(noiseGain); noiseGain.connect(master)
       noiseSource.start(now); noiseSource.stop(now + dur + 0.1)
-      return { gainNode: master, oscillators: [noiseSource] }
+
+      // Click component (transient tone): weighted by (1 - dryness)
+      const clickDur = Math.min(dur, 0.06)
+      const clickOsc = ctx.createOscillator()
+      clickOsc.type = 'sine'; clickOsc.frequency.value = f0 * 2
+      const clickGain = ctx.createGain()
+      clickGain.gain.setValueAtTime((1 - dryness) * 0.9, now)
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + clickDur)
+      clickOsc.connect(clickGain); clickGain.connect(master)
+      clickOsc.start(now); clickOsc.stop(now + clickDur + 0.01)
+      return { gainNode: master, oscillators: [noiseSource, clickOsc] }
     }
 
     // Dag: kepala wadon belakang terbuka — pitch-glide menurun resonan, ADSR 5/60/12%/200
     if (noteIndex === 2) {
       const adsr = noteParams?.adsr || { attack_ms: 5, decay_ms: 60, sustain: 0.12, release_ms: 200 }
-      const dur  = (adsr.attack_ms + adsr.decay_ms + adsr.release_ms) / 1000
+      const dur  = (adsr.attack_ms + adsr.decay_ms + (userParams.release_ms ?? adsr.release_ms)) / 1000
       const master = ctx.createGain()
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
@@ -149,7 +194,7 @@ const _synthesizers = {
 
     // Dug: kepala wadon belakang dalam — pitch-glide menurun bass, ADSR 4/40/5%/120
     const adsr = noteParams?.adsr || { attack_ms: 4, decay_ms: 40, sustain: 0.05, release_ms: 120 }
-    const dur  = (adsr.attack_ms + adsr.decay_ms + adsr.release_ms) / 1000
+    const dur  = (adsr.attack_ms + adsr.decay_ms + (userParams.release_ms ?? adsr.release_ms)) / 1000
     const master = ctx.createGain()
     master.gain.setValueAtTime(0, now)
     master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
@@ -183,7 +228,19 @@ const _synthesizers = {
     
     // Sustain until the natural end of the sample duration
     master.gain.setTargetAtTime(0, now + dur - 0.2, 0.15)
-    master.connect(ctx.destination)
+
+    // Resonance: lowpass filter sculpts the harmonic texture; higher resonance = darker, rounder tone
+    const resonance = userParams.resonance ?? 0.4
+    if (resonance > 0.01) {
+      const lpFilter = ctx.createBiquadFilter()
+      lpFilter.type = 'lowpass'
+      lpFilter.frequency.value = Math.max(f0 * 2, f0 * (4 - resonance * 2))
+      lpFilter.Q.value = 1 + resonance * 4
+      master.connect(lpFilter)
+      lpFilter.connect(ctx.destination)
+    } else {
+      master.connect(ctx.destination)
+    }
 
     const oscs = []
     const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
@@ -465,7 +522,16 @@ export class AudioEngine {
     const f0 = noteParams?.f0_hz || freq
     
     const isTung  = noteIndex % 2 === 0
-    const durSecs = instrument === 'kendang' ? (isTung ? 0.5 : 0.15) : (adsr.release_ms / 1000 + 0.5)
+    let durSecs
+    if (instrument === 'kendang') {
+      // 0=Tut: tonal medium, 1=Pak: impulsive slap, 2=Dag: resonant bass, 3=Dug: deep bass
+      const KENDANG_DUR = [0.5, 0.15, 0.5, 0.4]
+      durSecs = KENDANG_DUR[noteIndex] ?? 0.5
+    } else if (instrument === 'suling') {
+      durSecs = ev.noteParams?.duration_s ?? 5.0
+    } else {
+      durSecs = adsr.release_ms / 1000 + 0.5
+    }
     const frames  = Math.ceil(durSecs * sr)
     const gain    = params?.gain ?? 0.8
     const attackSec = Math.max(0.005, adsr.attack_ms / 1000)
@@ -496,6 +562,23 @@ export class AudioEngine {
         const env = att * Math.exp(-t * (isTung ? 8 : 40))
         const f   = f0 * Math.exp(-t * (isTung ? 4 : 12))
         sample = Math.sin(2 * Math.PI * f * t) * env
+      } else if (instrument === 'suling') {
+        const sAttack = Math.max(0.05, adsr.attack_ms / 1000)
+        const sSus    = durSecs - sAttack - 0.2
+        let env = 0
+        if (t < sAttack) {
+          env = t / sAttack
+        } else if (sSus > 0 && t < sAttack + sSus) {
+          env = 0.88
+        } else {
+          const relT = t - Math.max(sAttack, sAttack + sSus)
+          env = 0.88 * Math.exp(-relT / 0.15)
+        }
+        const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
+        const amps   = noteParams?.synth_amps   || [1.0, 0.22, 0.05]
+        for (let j = 0; j < ratios.length; j++) {
+          sample += amps[j] * Math.sin(2 * Math.PI * f0 * ratios[j] * t) * env
+        }
       } else {
         const env = att * Math.exp(-t * 0.5)
         const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
