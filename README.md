@@ -4,7 +4,7 @@ Aplikasi web interaktif yang mereproduksi suara tiga instrumen tradisional Bali 
 
 ## Ringkasan Proyek
 
-Proyek akademis oleh Kelompok 1, Program Studi Teknik Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026. Sistem menyajikan pengalaman bermain instrumen gamelan secara virtual dengan pemodelan akustik berbasis data, antarmuka interaktif keyboard dan sentuh, serta kemampuan ekspor rekaman sesi ke format WAV.
+Proyek akademis oleh Kelompok 1, Program Studi Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026. Sistem menyajikan pengalaman bermain instrumen gamelan secara virtual dengan pemodelan akustik berbasis data, antarmuka interaktif keyboard dan sentuh, serta kemampuan ekspor rekaman sesi ke format WAV.
 
 ## Fitur Utama
 
@@ -176,4 +176,4 @@ gamelan-web/
 
 ## Kredit
 
-Dikembangkan oleh Kelompok 1, Program Studi Teknik Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026.
+Dikembangkan oleh Kelompok 1, Program Studi Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026.

@@ -27,7 +27,7 @@ const _synthesizers = {
     const defaultAmps   = isNadaKecil ? [1.0, 0.50, 0.25] : [1.0, 0.55, 0.28]
     const ratios = noteParams?.synth_ratios || defaultRatios
     const amps   = noteParams?.synth_amps   || defaultAmps
-    const ombak = noteParams?.ombak_hz || 8
+    const ombak = userParams.ombak ?? noteParams?.ombak_hz ?? 8
     const f0 = noteParams?.f0_hz || baseFreq
 
     // Override with user settings
@@ -91,6 +91,23 @@ const _synthesizers = {
     const f0  = noteParams?.f0_hz || baseFreq
     const masterGain = userParams.gain || 0.8
 
+    // Resonance: peaking EQ centered at the membrane's fundamental — models the
+    // drum shell/body resonance. Shared across all four strokes.
+    const resonance = userParams.resonance ?? 0.4
+    const connectResonant = (master, centerFreq) => {
+      if (resonance > 0.01) {
+        const peakEq = ctx.createBiquadFilter()
+        peakEq.type = 'peaking'
+        peakEq.frequency.value = centerFreq
+        peakEq.gain.value = resonance * 8
+        peakEq.Q.value = 1 + resonance * 6
+        master.connect(peakEq)
+        peakEq.connect(ctx.destination)
+      } else {
+        master.connect(ctx.destination)
+      }
+    }
+
     // Tut: kepala lanang muka tengah — tonal + bandpass noise, ADSR 3/50/8%/180
     if (noteIndex === 0) {
       const adsr   = noteParams?.adsr || { attack_ms: 3, decay_ms: 50, sustain: 0.08, release_ms: 180 }
@@ -101,7 +118,7 @@ const _synthesizers = {
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
       master.gain.exponentialRampToValueAtTime(0.001, now + dur)
-      master.connect(ctx.destination)
+      connectResonant(master, f0)
 
       const osc1 = ctx.createOscillator(); const g1 = ctx.createGain()
       osc1.type = 'sine'; osc1.frequency.value = f0
@@ -144,7 +161,7 @@ const _synthesizers = {
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
       master.gain.exponentialRampToValueAtTime(0.001, now + dur)
-      master.connect(ctx.destination)
+      connectResonant(master, f0)
 
       const bufSize = ctx.sampleRate * dur
       const noiseBuffer = ctx.createBuffer(1, bufSize, ctx.sampleRate)
@@ -179,7 +196,7 @@ const _synthesizers = {
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
       master.gain.exponentialRampToValueAtTime(0.001, now + dur)
-      master.connect(ctx.destination)
+      connectResonant(master, f0)
 
       const osc = ctx.createOscillator()
       osc.type = 'sine'
@@ -199,7 +216,7 @@ const _synthesizers = {
     master.gain.setValueAtTime(0, now)
     master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
     master.gain.exponentialRampToValueAtTime(0.001, now + dur)
-    master.connect(ctx.destination)
+    connectResonant(master, f0)
 
     const osc = ctx.createOscillator()
     osc.type = 'sine'
@@ -226,8 +243,9 @@ const _synthesizers = {
     const attackSec = Math.max(0.05, (userParams.attack_ms ?? adsr.attack_ms) / 1000)
     master.gain.linearRampToValueAtTime(userParams.gain || 0.7, now + attackSec)
     
-    // Sustain until the natural end of the sample duration
-    master.gain.setTargetAtTime(0, now + dur - 0.2, 0.15)
+    // Sustain, then release over user-controlled release time before the sample ends
+    const releaseSec = Math.max(0.05, (userParams.release_ms ?? adsr.release_ms) / 1000)
+    master.gain.setTargetAtTime(0, now + Math.max(attackSec, dur - releaseSec), releaseSec / 3)
 
     // Resonance: lowpass filter sculpts the harmonic texture; higher resonance = darker, rounder tone
     const resonance = userParams.resonance ?? 0.4
