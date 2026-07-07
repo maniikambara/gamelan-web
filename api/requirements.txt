@@ -4,3 +4,4 @@ python-multipart==0.0.9
 numpy==1.26.4
 scipy==1.13.1
 pydub==0.25.1
+matplotlib==3.9.0

@@ -107,6 +107,23 @@ python analyze_samples.py
 
 Output: `api/synthesis_params.json` berisi parameter FFT per nada (f0, rasio harmonik, amplitudo, ombak, ADSR).
 
+### Visualisasi Hasil Sintesis
+
+Skrip `api/visualize_synthesis.py` mensintesis seluruh nada dari ketiga instrumen menggunakan fungsi sintesis yang identik dengan `api/index.py`, lalu menghasilkan grafik analisis akustik dengan matplotlib:
+
+```bash
+cd api
+python visualize_synthesis.py
+```
+
+Output tersimpan di `api/visualizations/`:
+
+- `waveform_gangsa.png`, `waveform_kendang.png`, `waveform_suling.png` — bentuk gelombang seluruh nada per instrumen
+- `fft_spectrum_gangsa_dong.png` — spektrum FFT Gangsa nada Dong (261 Hz), menandai puncak parsial inharmonik `[1,0; 2,76; 5,18]`
+- `adsr_comparison.png` — perbandingan selubung ADSR antara Gangsa, Kendang (Tut), dan Suling
+- `spectrogram_suling.png` — spektrogram nada Suling menampilkan modulasi vibrato dan noise hembusan
+- `gangsa_partial_ratios.png` — perbandingan rasio parsial bilah nada besar vs bilah nada kecil
+
 ### Build Produksi
 
 ```bash
@@ -138,9 +155,11 @@ gamelan-web/
 ├── api/
 │   ├── index.py                         # FastAPI: synthesis, sample management, export
 │   ├── analyze_samples.py               # FFT analysis → synthesis_params.json
+│   ├── visualize_synthesis.py           # Visualisasi matplotlib hasil sintesis (waveform, FFT, ADSR, spektrogram)
 │   ├── synthesis_params.json            # Parameter akustik per nada (hasil analisis)
 │   ├── requirements.txt                 # Dependensi Python
 │   ├── samples/                         # Sampel audio default per instrumen
+│   ├── visualizations/                  # Output PNG dari visualize_synthesis.py
 │   └── SAMPLES_README.md
 ├── public/assets/                       # Gambar instrumen (PNG, SVG)
 ├── assets/                              # Source asset sebelum build
@@ -153,7 +172,7 @@ gamelan-web/
 
 **Frontend**: Vue 3.4, Vite 6.0, @vitejs/plugin-vue 5.0
 
-**Backend**: FastAPI, uvicorn, numpy, scipy, pydub (opsional, untuk MP3)
+**Backend**: FastAPI, uvicorn, numpy, scipy, pydub (opsional, untuk MP3), matplotlib (opsional, untuk `visualize_synthesis.py`)
 
 ## Kredit
 
