@@ -430,6 +430,7 @@ export class AudioEngine {
     // Record event for later export
     if (this.isRecording) {
       this.recordingEvents.push({
+        type: 'play',
         timestamp_ms: Date.now() - this.recordStartTime,
         instrument,
         noteName,
@@ -453,6 +454,19 @@ export class AudioEngine {
   muteNote(instrument, noteName) {
     const key = `${instrument}/${noteName}`
     const active = this.activeSources[key]
+
+    // Record event for later export — even if the source already ended
+    // naturally (active undefined), we still want the mute timestamp so a
+    // manual mute that lands just as the note was fading is captured.
+    if (this.isRecording) {
+      this.recordingEvents.push({
+        type: 'mute',
+        timestamp_ms: Date.now() - this.recordStartTime,
+        instrument,
+        noteName,
+      })
+    }
+
     if (!active) return
 
     const { gainNode, oscillators } = active
@@ -503,12 +517,17 @@ export class AudioEngine {
 
     try {
       const sr = this.ctx.sampleRate
-      const events = this.recordingEvents
-      if (!events || events.length === 0) {
+      const allEvents = this.recordingEvents
+      if (!allEvents || allEvents.length === 0) {
         return { url: '', blob: null }
       }
 
-      const maxOffset = Math.max(...events.map(e => e.timestamp_ms)) / 1000
+      // Pair each play event with the mute event (if any) that actually
+      // stopped it live, so the export reproduces the same held duration —
+      // not the note's full natural envelope regardless of how it was played.
+      const events = this._pairMuteEvents(allEvents)
+
+      const maxOffset = Math.max(...allEvents.map(e => e.timestamp_ms)) / 1000
       const bufferSecs = maxOffset + 5.0
       const frameCount = Math.ceil(bufferSecs * sr)
       const mix = new Float32Array(frameCount)
@@ -532,9 +551,39 @@ export class AudioEngine {
     }
   }
 
+  /**
+   * Pair each 'play' event with the 'mute' event (if any) that actually
+   * stopped it live — bounded by the next 'play' of the same note, so a
+   * later mute of a *different* strike of the same note isn't misattributed.
+   * Returns play events only, each annotated with `heldSecs` when a matching
+   * mute was found (undefined otherwise, meaning "let it ring naturally").
+   */
+  _pairMuteEvents(allEvents) {
+    const plays = allEvents.filter(e => e.type !== 'mute')
+    const mutes = allEvents.filter(e => e.type === 'mute')
+
+    return plays.map(ev => {
+      let nextPlayTs = Infinity
+      for (const p of plays) {
+        if (p !== ev && p.instrument === ev.instrument && p.noteName === ev.noteName &&
+            p.timestamp_ms > ev.timestamp_ms && p.timestamp_ms < nextPlayTs) {
+          nextPlayTs = p.timestamp_ms
+        }
+      }
+      let muteAtMs = null
+      for (const m of mutes) {
+        if (m.instrument === ev.instrument && m.noteName === ev.noteName &&
+            m.timestamp_ms > ev.timestamp_ms && m.timestamp_ms < nextPlayTs) {
+          if (muteAtMs === null || m.timestamp_ms < muteAtMs) muteAtMs = m.timestamp_ms
+        }
+      }
+      return muteAtMs === null ? ev : { ...ev, heldSecs: (muteAtMs - ev.timestamp_ms) / 1000 }
+    })
+  }
+
   /** Procedural note mixing for the recording export. */
   _mixProcedural(mix, startFrame, ev, sr) {
-    const { instrument, noteIndex, freq, params, noteParams } = ev
+    const { instrument, noteIndex, freq, params, noteParams, heldSecs } = ev
 
     const adsr = noteParams?.adsr || { attack_ms: 10, decay_ms: 5, sustain: 0.9, release_ms: 3000 }
     const f0 = noteParams?.f0_hz || freq
@@ -550,6 +599,15 @@ export class AudioEngine {
     } else {
       durSecs = adsr.release_ms / 1000 + 0.5
     }
+
+    // Note was muted/released early during the live take — cut the export
+    // off at the same point with a quick fade, matching muteNote()'s fade,
+    // instead of always rendering the note's full natural envelope.
+    const MUTE_FADE_SECS = 0.05
+    if (heldSecs != null) {
+      durSecs = Math.min(durSecs, Math.max(0, heldSecs) + MUTE_FADE_SECS)
+    }
+
     const frames = Math.ceil(durSecs * sr)
     const gain = params?.gain ?? 0.8
     const attackSec = Math.max(0.005, adsr.attack_ms / 1000)
@@ -604,6 +662,11 @@ export class AudioEngine {
         for (let j = 0; j < ratios.length; j++) {
           sample += amps[j] * Math.sin(2 * Math.PI * f0 * ratios[j] * t) * env
         }
+      }
+
+      // Fast fade after the point the note was actually muted/released live
+      if (heldSecs != null && t > heldSecs) {
+        sample *= Math.exp(-(t - heldSecs) / 0.012)
       }
 
       mix[dest] += sample * gain
