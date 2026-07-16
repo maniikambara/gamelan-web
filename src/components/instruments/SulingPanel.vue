@@ -43,7 +43,10 @@
             class="suling-kbd-chip"
             :class="{ active: activeNote === note.index }"
             @mousedown="playNote(note.index)"
-            @touchstart.prevent="playNote(note.index)">
+            @mouseup="stopNote(note.index)"
+            @mouseleave="stopNote(note.index)"
+            @touchstart.prevent="playNote(note.index)"
+            @touchend.prevent="stopNote(note.index)">
             {{ KEYS[note.index] }}
           </button>
           <span class="suling-note-key-label">{{ note.name.split(' ')[0].toUpperCase() }}</span>
@@ -57,7 +60,10 @@
             class="suling-kbd-chip"
             :class="{ active: activeNote === note.index }"
             @mousedown="playNote(note.index)"
-            @touchstart.prevent="playNote(note.index)">
+            @mouseup="stopNote(note.index)"
+            @mouseleave="stopNote(note.index)"
+            @touchstart.prevent="playNote(note.index)"
+            @touchend.prevent="stopNote(note.index)">
             {{ KEYS[note.index] }}
           </button>
           <span class="suling-note-key-label">{{ note.name.split(' ')[0].toUpperCase() }}</span>
@@ -79,7 +85,7 @@ export default {
   props: {
     instrument: Object,
   },
-  emits: ['play-note'],
+  emits: ['play-note', 'mute-note'],
   setup(props, { emit }) {
     const canvasRef = ref(null)
     const imgRef    = ref(null)
@@ -150,17 +156,21 @@ export default {
 
     watch(activeNote, () => drawSuling())
 
+    // Suling is held to sound (like actually blowing into it): press = start,
+    // release = stop immediately. No fixed-duration auto-reset — the note
+    // rings for as long as the key/button stays down.
     const playNote = (i) => {
       if (i == null || i < 0) return
       const note = props.instrument.notes[i]
       emit('play-note', { noteIndex: note.index, noteName: note.name, freq: note.freq })
-
       activeNote.value = i
-      setTimeout(() => {
-        if (activeNote.value === i) {
-          activeNote.value = null
-        }
-      }, 400)
+    }
+
+    const stopNote = (i) => {
+      if (i == null || i < 0 || activeNote.value !== i) return
+      const note = props.instrument.notes[i]
+      emit('mute-note', { noteIndex: note.index, noteName: note.name })
+      activeNote.value = null
     }
 
     // Keyboard
@@ -172,8 +182,16 @@ export default {
       playNote(idx)
     }
 
+    const onKeyUp = (e) => {
+      const idx = KEY_TO_IDX[e.key.toLowerCase()]
+      if (idx == null) return
+      e.preventDefault()
+      stopNote(idx)
+    }
+
     onMounted(() => {
       window.addEventListener('keydown', onKeyDown)
+      window.addEventListener('keyup', onKeyUp)
       nextTick(() => {
         if (imgRef.value?.complete) drawSuling()
       })
@@ -181,12 +199,13 @@ export default {
 
     onUnmounted(() => {
       window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
     })
 
     return {
       canvasRef, imgRef,
       canvasW, canvasH, KEYS, activeNote,
-      notesRendah, notesTinggi, isRendahActive, isTinggiActive, playNote, drawSuling
+      notesRendah, notesTinggi, isRendahActive, isTinggiActive, playNote, stopNote, drawSuling
     }
   },
 }

@@ -24,9 +24,9 @@ const _synthesizers = {
     const adsr = noteParams?.adsr || { attack_ms: 10, decay_ms: 5, sustain: 0.9, release_ms: 3000 }
     const isNadaKecil = noteIndex >= 5
     const defaultRatios = isNadaKecil ? [1.0, 2.61, 4.80] : [1.0, 2.76, 5.18]
-    const defaultAmps   = isNadaKecil ? [1.0, 0.50, 0.25] : [1.0, 0.55, 0.28]
+    const defaultAmps = isNadaKecil ? [1.0, 0.50, 0.25] : [1.0, 0.55, 0.28]
     const ratios = noteParams?.synth_ratios || defaultRatios
-    const amps   = noteParams?.synth_amps   || defaultAmps
+    const amps = noteParams?.synth_amps || defaultAmps
     const ombak = userParams.ombak ?? noteParams?.ombak_hz ?? 8
     const f0 = noteParams?.f0_hz || baseFreq
 
@@ -88,7 +88,7 @@ const _synthesizers = {
 
   kendang(ctx, baseFreq, noteParams, userParams, noteIndex) {
     const now = ctx.currentTime
-    const f0  = noteParams?.f0_hz || baseFreq
+    const f0 = noteParams?.f0_hz || baseFreq
     const masterGain = userParams.gain || 0.8
 
     // Resonance: peaking EQ centered at the membrane's fundamental — models the
@@ -110,10 +110,10 @@ const _synthesizers = {
 
     // Tut: kepala lanang muka tengah — tonal + bandpass noise, ADSR 3/50/8%/180
     if (noteIndex === 0) {
-      const adsr   = noteParams?.adsr || { attack_ms: 3, decay_ms: 50, sustain: 0.08, release_ms: 180 }
-      const relMs  = userParams.release_ms ?? adsr.release_ms
-      const dur    = (adsr.attack_ms + adsr.decay_ms + relMs) / 1000
-      const depth  = userParams.depth ?? 0.6
+      const adsr = noteParams?.adsr || { attack_ms: 3, decay_ms: 50, sustain: 0.08, release_ms: 180 }
+      const relMs = userParams.release_ms ?? adsr.release_ms
+      const dur = (adsr.attack_ms + adsr.decay_ms + relMs) / 1000
+      const depth = userParams.depth ?? 0.6
       const master = ctx.createGain()
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
@@ -153,9 +153,9 @@ const _synthesizers = {
 
     // Pak: kepala lanang muka tepi — impulsif tajam, ADSR 2/18/2%/80
     if (noteIndex === 1) {
-      const adsr    = noteParams?.adsr || { attack_ms: 2, decay_ms: 18, sustain: 0.02, release_ms: 80 }
-      const relMs   = userParams.release_ms ?? adsr.release_ms
-      const dur     = (adsr.attack_ms + adsr.decay_ms + relMs) / 1000
+      const adsr = noteParams?.adsr || { attack_ms: 2, decay_ms: 18, sustain: 0.02, release_ms: 80 }
+      const relMs = userParams.release_ms ?? adsr.release_ms
+      const dur = (adsr.attack_ms + adsr.decay_ms + relMs) / 1000
       const dryness = userParams.dryness ?? 0.7
       const master = ctx.createGain()
       master.gain.setValueAtTime(0, now)
@@ -191,7 +191,7 @@ const _synthesizers = {
     // Dag: kepala wadon belakang terbuka — pitch-glide menurun resonan, ADSR 5/60/12%/200
     if (noteIndex === 2) {
       const adsr = noteParams?.adsr || { attack_ms: 5, decay_ms: 60, sustain: 0.12, release_ms: 200 }
-      const dur  = (adsr.attack_ms + adsr.decay_ms + (userParams.release_ms ?? adsr.release_ms)) / 1000
+      const dur = (adsr.attack_ms + adsr.decay_ms + (userParams.release_ms ?? adsr.release_ms)) / 1000
       const master = ctx.createGain()
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
@@ -211,7 +211,7 @@ const _synthesizers = {
 
     // Dug: kepala wadon belakang dalam — pitch-glide menurun bass, ADSR 4/40/5%/120
     const adsr = noteParams?.adsr || { attack_ms: 4, decay_ms: 40, sustain: 0.05, release_ms: 120 }
-    const dur  = (adsr.attack_ms + adsr.decay_ms + (userParams.release_ms ?? adsr.release_ms)) / 1000
+    const dur = (adsr.attack_ms + adsr.decay_ms + (userParams.release_ms ?? adsr.release_ms)) / 1000
     const master = ctx.createGain()
     master.gain.setValueAtTime(0, now)
     master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
@@ -229,20 +229,20 @@ const _synthesizers = {
 
   suling(ctx, baseFreq, noteParams, userParams) {
     const now = ctx.currentTime
-    const f0  = noteParams?.f0_hz || baseFreq
+    const f0 = noteParams?.f0_hz || baseFreq
     const adsr = noteParams?.adsr || { attack_ms: 100, decay_ms: 80, sustain: 0.88, release_ms: 600 }
-    
+
     // Gunakan durasi sampel asli (sekitar 4-6 detik), atau default ke 5 detik jika tidak ada
-    const dur  = noteParams?.duration_s || 5.0
+    const dur = noteParams?.duration_s || 5.0
     const breath = (userParams.breath ?? 0.18) * Math.sqrt(f0 / 558.0)
 
     const master = ctx.createGain()
     master.gain.setValueAtTime(0, now)
-    
+
     // Slow, breathy attack typical for suling
     const attackSec = Math.max(0.05, (userParams.attack_ms ?? adsr.attack_ms) / 1000)
     master.gain.linearRampToValueAtTime(userParams.gain || 0.7, now + attackSec)
-    
+
     // Sustain, then release over user-controlled release time before the sample ends
     const releaseSec = Math.max(0.05, (userParams.release_ms ?? adsr.release_ms) / 1000)
     master.gain.setTargetAtTime(0, now + Math.max(attackSec, dur - releaseSec), releaseSec / 3)
@@ -262,7 +262,7 @@ const _synthesizers = {
 
     const oscs = []
     const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
-    const amps   = noteParams?.synth_amps   || [1.0, 0.22, 0.05]
+    const amps = noteParams?.synth_amps || [1.0, 0.22, 0.05]
 
     // Vibrato (Suling Bali has very strong, expressive vibrato)
     const vibratoOsc = ctx.createOscillator()
@@ -279,9 +279,9 @@ const _synthesizers = {
       const amp = amps[i] || 0
       if (amp < 0.001) return
       const osc = ctx.createOscillator(); const g = ctx.createGain()
-      osc.type = 'sine'; 
+      osc.type = 'sine';
       osc.frequency.value = f0 * r
-      
+
       // Connect vibrato to each harmonic, scaled by its ratio so it stays in tune
       const harmonicVibGain = ctx.createGain()
       harmonicVibGain.gain.value = r
@@ -304,7 +304,7 @@ const _synthesizers = {
         const u1 = Math.random() || 1e-10
         const u2 = Math.random()
         const mag = 0.18 * Math.sqrt(-2.0 * Math.log(u1))
-        data[i]     = mag * Math.cos(2.0 * Math.PI * u2)
+        data[i] = mag * Math.cos(2.0 * Math.PI * u2)
         if (i + 1 < noiseFrames) data[i + 1] = mag * Math.sin(2.0 * Math.PI * u2)
       }
       const noiseSource = ctx.createBufferSource()
@@ -395,7 +395,7 @@ export class AudioEngine {
   playNote(instrument, noteIndex, noteName, freq, params) {
     this.resume()
     const key = `${instrument}/${noteName}`
-    
+
     // Suling is monophonic: mute any currently playing suling note
     if (instrument === 'suling') {
       for (const activeKey in this.activeSources) {
@@ -410,7 +410,7 @@ export class AudioEngine {
     const noteParams = this.synthParams[instrument]?.[noteName]
 
     const result = this._procedural(instrument, noteIndex, freq, params, noteParams)
-    
+
     if (result) {
       this.activeSources[key] = {
         gainNode: result.gainNode,
@@ -461,7 +461,7 @@ export class AudioEngine {
     setTimeout(() => {
       if (oscillators) {
         for (const osc of oscillators) {
-          try { osc.stop() } catch (_) {}
+          try { osc.stop() } catch (_) { }
         }
       }
     }, 60)
@@ -502,16 +502,16 @@ export class AudioEngine {
     this.isRecording = false
 
     try {
-      const sr     = this.ctx.sampleRate
+      const sr = this.ctx.sampleRate
       const events = this.recordingEvents
       if (!events || events.length === 0) {
         return { url: '', blob: null }
       }
 
-      const maxOffset  = Math.max(...events.map(e => e.timestamp_ms)) / 1000
+      const maxOffset = Math.max(...events.map(e => e.timestamp_ms)) / 1000
       const bufferSecs = maxOffset + 5.0
       const frameCount = Math.ceil(bufferSecs * sr)
-      const mix        = new Float32Array(frameCount)
+      const mix = new Float32Array(frameCount)
 
       for (const ev of events) {
         const startFrame = Math.floor(ev.timestamp_ms / 1000 * sr)
@@ -535,11 +535,11 @@ export class AudioEngine {
   /** Procedural note mixing for the recording export. */
   _mixProcedural(mix, startFrame, ev, sr) {
     const { instrument, noteIndex, freq, params, noteParams } = ev
-    
+
     const adsr = noteParams?.adsr || { attack_ms: 10, decay_ms: 5, sustain: 0.9, release_ms: 3000 }
     const f0 = noteParams?.f0_hz || freq
-    
-    const isTung  = noteIndex % 2 === 0
+
+    const isTung = noteIndex % 2 === 0
     let durSecs
     if (instrument === 'kendang') {
       // 0=Tut: tonal medium, 1=Pak: impulsive slap, 2=Dag: resonant bass, 3=Dug: deep bass
@@ -550,26 +550,26 @@ export class AudioEngine {
     } else {
       durSecs = adsr.release_ms / 1000 + 0.5
     }
-    const frames  = Math.ceil(durSecs * sr)
-    const gain    = params?.gain ?? 0.8
+    const frames = Math.ceil(durSecs * sr)
+    const gain = params?.gain ?? 0.8
     const attackSec = Math.max(0.005, adsr.attack_ms / 1000)
 
     for (let i = 0; i < frames; i++) {
-      const t   = i / sr
+      const t = i / sr
       const dest = startFrame + i
       if (dest >= mix.length) break
 
       let sample = 0
-      
+
       // Simple envelope
       const att = Math.min(t / attackSec, 1.0)
-      
+
       if (instrument === 'gangsa') {
         const env = att * Math.exp(-t * 1.5)
         const ratios = noteParams?.synth_ratios || [1.0, 2.756, 5.404]
         const amps = noteParams?.synth_amps || [1.0, 0.55, 0.28]
         const ombak = noteParams?.ombak_hz || 6
-        
+
         for (let j = 0; j < ratios.length; j++) {
           sample += amps[j] * Math.sin(2 * Math.PI * f0 * ratios[j] * t) * env
           if (j < 3) {
@@ -578,11 +578,11 @@ export class AudioEngine {
         }
       } else if (instrument === 'kendang') {
         const env = att * Math.exp(-t * (isTung ? 8 : 40))
-        const f   = f0 * Math.exp(-t * (isTung ? 4 : 12))
+        const f = f0 * Math.exp(-t * (isTung ? 4 : 12))
         sample = Math.sin(2 * Math.PI * f * t) * env
       } else if (instrument === 'suling') {
         const sAttack = Math.max(0.05, adsr.attack_ms / 1000)
-        const sSus    = durSecs - sAttack - 0.2
+        const sSus = durSecs - sAttack - 0.2
         let env = 0
         if (t < sAttack) {
           env = t / sAttack
@@ -593,14 +593,14 @@ export class AudioEngine {
           env = 0.88 * Math.exp(-relT / 0.15)
         }
         const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
-        const amps   = noteParams?.synth_amps   || [1.0, 0.22, 0.05]
+        const amps = noteParams?.synth_amps || [1.0, 0.22, 0.05]
         for (let j = 0; j < ratios.length; j++) {
           sample += amps[j] * Math.sin(2 * Math.PI * f0 * ratios[j] * t) * env
         }
       } else {
         const env = att * Math.exp(-t * 0.5)
         const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
-        const amps   = noteParams?.synth_amps   || [1.0, 0.22, 0.05]
+        const amps = noteParams?.synth_amps || [1.0, 0.22, 0.05]
         for (let j = 0; j < ratios.length; j++) {
           sample += amps[j] * Math.sin(2 * Math.PI * f0 * ratios[j] * t) * env
         }
@@ -614,22 +614,22 @@ export class AudioEngine {
 
   _float32ToWav(samples, sampleRate) {
     const length = samples.length
-    const buf    = new ArrayBuffer(44 + length * 2)
-    const view   = new DataView(buf)
-    const write  = (off, str) => {
+    const buf = new ArrayBuffer(44 + length * 2)
+    const view = new DataView(buf)
+    const write = (off, str) => {
       for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i))
     }
     write(0, 'RIFF')
-    view.setUint32(4,  36 + length * 2, true)
+    view.setUint32(4, 36 + length * 2, true)
     write(8, 'WAVE')
     write(12, 'fmt ')
-    view.setUint32(16, 16,         true)
-    view.setUint16(20, 1,          true)   // PCM
-    view.setUint16(22, 1,          true)   // mono
+    view.setUint32(16, 16, true)
+    view.setUint16(20, 1, true)   // PCM
+    view.setUint16(22, 1, true)   // mono
     view.setUint32(24, sampleRate, true)
     view.setUint32(28, sampleRate * 2, true)
-    view.setUint16(32, 2,          true)
-    view.setUint16(34, 16,         true)
+    view.setUint16(32, 2, true)
+    view.setUint16(34, 16, true)
     write(36, 'data')
     view.setUint32(40, length * 2, true)
     let off = 44
@@ -648,7 +648,7 @@ export class AudioEngine {
   }
 
   clearRecording() {
-    this.recordedChunks  = []
+    this.recordedChunks = []
     this.recordingEvents = []
     this.recordStartTime = 0
   }
