@@ -6,11 +6,23 @@
         v-for="inst in instruments"
         :key="inst.key"
         class="nav-btn"
-        :class="{ active: inst.key === activeInstrument }"
+        :class="{ active: currentView === 'instrument' && inst.key === activeInstrument }"
         @click="$emit('select', inst.key)"
       >
         <span class="nav-btn-name">{{ inst.label }}</span>
         <span class="nav-btn-desc">{{ inst.notes.length }} {{ inst.key === 'kendang' ? 'suara' : 'nada' }}</span>
+      </button>
+    </nav>
+
+    <p class="sidebar-section-title" style="margin-top: 1.5rem;">Lainnya</p>
+    <nav>
+      <button
+        class="nav-btn"
+        :class="{ active: currentView === 'rhythm' }"
+        @click="$emit('select-rhythm')"
+      >
+        <span class="nav-btn-name">Mode Permainan</span>
+        <span class="nav-btn-desc">ritme gamelan</span>
       </button>
     </nav>
   </aside>
@@ -21,7 +33,8 @@ export default {
   props: {
     instruments: Object,
     activeInstrument: String,
+    currentView: { type: String, default: 'instrument' },
   },
-  emits: ['select'],
+  emits: ['select', 'select-rhythm'],
 }
 </script>

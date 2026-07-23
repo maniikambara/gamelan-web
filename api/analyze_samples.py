@@ -28,7 +28,7 @@ from typing import Optional
 import numpy as np
 from scipy.fft import fft, fftfreq
 from scipy.io import wavfile
-from scipy.signal import butter, find_peaks, filtfilt, sosfiltfilt, lfilter, medfilt
+from scipy.signal import butter, find_peaks, filtfilt, lfilter, medfilt
 
 warnings.filterwarnings("ignore", category=wavfile.WavFileWarning)
 
@@ -200,121 +200,6 @@ def measure_adsr(signal: np.ndarray, sr: int) -> dict:
     }
 
 
-# ─── Noise floor estimation & suppression ─────────────────────────────────────
-
-NOISE_ANALYSIS_FRAME = 4096  # samples (~93ms @44.1kHz) — kept short and fixed on
-                              # purpose (see estimate_noise_floor_fft docstring)
-
-
-def estimate_noise_floor_fft(signal: np.ndarray, sr: int, n_fft: int,
-                              frame_ms: float = 20.0, hop_ms: float = 10.0,
-                              silence_ratio: float = 0.06, max_frames: int = 40) -> np.ndarray:
-    """
-    Estimate the background-noise magnitude spectrum, expressed on the same
-    frequency grid as an `n_fft`-point analysis spectrum so it can be
-    subtracted directly.
-
-    Only frames that are genuinely near-silent — RMS below `silence_ratio` of
-    the recording's peak RMS (room tone / hiss / hum before onset or after the
-    note has fully decayed) — are used. This deliberately does NOT use "the
-    quietest N% of frames", because for samples with no true silent stretch
-    that would pick up the note's own quiet decay tail (still real harmonic
-    content, just soft) and subtracting it would erase the fundamental itself.
-    If no frame is actually near-silent, an all-zero profile is returned —
-    i.e. no denoising is applied rather than risking removing real signal.
-
-    The noise profile itself is measured with a short, FIXED-length window
-    (`NOISE_ANALYSIS_FRAME`), never the (often much larger) `n_fft` used for
-    harmonic analysis — otherwise a window merely *starting* at a brief quiet
-    dip would still span most of the note when `n_fft` covers ~1s+, pulling
-    in real signal and mislabelling it as noise. The measured profile is then
-    interpolated onto the `n_fft` frequency grid and rescaled by sqrt(n_fft /
-    NOISE_ANALYSIS_FRAME) — the correct scaling for how a stochastic/broadband
-    signal's magnitude spectrum grows with window length (unlike a pure tone,
-    whose peak bin grows ∝ N).
-    """
-    n_bins = n_fft // 2 + 1
-    noise_frame = min(NOISE_ANALYSIS_FRAME, n_fft)
-    if len(signal) < noise_frame:
-        return np.zeros(n_bins)
-
-    env, _ = rms_envelope(signal, sr, frame_ms=frame_ms, hop_ms=hop_ms)
-    if len(env) == 0:
-        return np.zeros(n_bins)
-
-    peak_rms = float(np.max(env))
-    if peak_rms < 1e-9:
-        return np.zeros(n_bins)
-
-    hop = max(1, int(sr * hop_ms / 1000))
-    quiet_idx = np.where(env <= silence_ratio * peak_rms)[0]
-    if len(quiet_idx) < 3:
-        # No genuinely silent stretch in this recording — nothing safe to subtract.
-        return np.zeros(n_bins)
-    if len(quiet_idx) > max_frames:
-        quiet_idx = quiet_idx[np.linspace(0, len(quiet_idx) - 1, max_frames).astype(int)]
-
-    window = np.hanning(noise_frame)
-    specs = []
-    for qi in quiet_idx:
-        start = qi * hop
-        start = max(0, min(start, len(signal) - noise_frame))
-        seg = signal[start:start + noise_frame]
-        if len(seg) < noise_frame:
-            continue
-        specs.append(np.abs(np.fft.rfft(seg * window)))
-
-    if not specs:
-        return np.zeros(n_bins)
-
-    noise_small  = np.median(np.array(specs), axis=0)
-    freqs_small  = np.fft.rfftfreq(noise_frame, 1 / sr)
-    freqs_main   = np.fft.rfftfreq(n_fft, 1 / sr)
-    noise_interp = np.interp(freqs_main, freqs_small, noise_small)
-    scale        = np.sqrt(n_fft / noise_frame)
-    return noise_interp * scale
-
-
-def denoise_spectrum(spec: np.ndarray, noise_floor: np.ndarray,
-                     oversubtract: float = 1.8, spectral_floor: float = 0.05) -> np.ndarray:
-    """
-    Spectral subtraction: remove the estimated noise floor from a magnitude
-    spectrum. `oversubtract` pushes noise bins closer to zero; `spectral_floor`
-    keeps a small residual (as a fraction of the original bin) to avoid
-    introducing artefacts from over-subtraction.
-    """
-    if len(noise_floor) != len(spec):
-        noise_floor = np.interp(np.linspace(0, 1, len(spec)),
-                                 np.linspace(0, 1, len(noise_floor)), noise_floor)
-    return np.maximum(spec - oversubtract * noise_floor, spectral_floor * spec)
-
-
-def bandpass_filter(signal: np.ndarray, sr: int, f_lo: float, f_hi: float,
-                    order: int = 4) -> np.ndarray:
-    """Zero-phase Butterworth bandpass — restricts analysis to a plausible
-    frequency range so out-of-band noise/hum cannot bias pitch/peak detection.
-
-    Uses second-order-sections (SOS) form rather than transfer-function (b, a)
-    coefficients: at the low normalized cutoffs typical of Kendang (tens of Hz
-    at a 44.1kHz rate), the (b, a) polynomial form is numerically unstable —
-    `filtfilt` can silently blow up to absurd magnitudes without raising —
-    while SOS stays well-conditioned for exactly this case.
-    """
-    nyq = sr / 2
-    lo = max(1.0, f_lo) / nyq
-    hi = min(nyq - 1.0, f_hi) / nyq
-    if lo <= 0 or hi >= 1 or lo >= hi:
-        return signal
-    try:
-        sos = butter(order, [lo, hi], btype="bandpass", output="sos")
-        out = sosfiltfilt(sos, signal).astype(np.float32)
-        if not np.all(np.isfinite(out)):
-            return signal
-        return out
-    except Exception:
-        return signal
-
-
 # ─── Pitch / F0 detection ─────────────────────────────────────────────────────
 
 def detect_f0(signal: np.ndarray, sr: int,
@@ -322,18 +207,12 @@ def detect_f0(signal: np.ndarray, sr: int,
     """
     YIN-inspired F0 detection using normalized autocorrelation.
     Uses the steady-state portion of the signal to avoid transient confusion.
-    The signal is first bandpass-filtered to the plausible F0 range so
-    broadband noise/hum outside that range cannot distort the autocorrelation.
     """
-    # Restrict to the instrument's plausible pitch range before anything else —
-    # this is what keeps noise from masquerading as a valid F0 candidate.
-    filtered_signal = bandpass_filter(signal, sr, f_min * 0.8, f_max * 1.2)
-
     # Use steady-state: skip first 10%, use next 40% of duration
-    n      = len(filtered_signal)
+    n      = len(signal)
     start  = max(0, int(0.1 * n))
     end    = min(n, int(0.5 * n))
-    seg    = filtered_signal[start:end]
+    seg    = signal[start:end]
 
     # Limit segment length for speed
     win_size = min(len(seg), 8192)
@@ -359,25 +238,18 @@ def detect_f0(signal: np.ndarray, sr: int,
         return None
     acf /= acf[0]
 
-    # Find the first (shortest-period / highest-frequency) peak that clears a
-    # confidence threshold — NOT simply the single strongest peak. A true
-    # periodic signal's autocorrelation is high at its actual period AND at
-    # integer multiples of it (octave-below subharmonics), often almost
-    # equally high; picking the global max is a coin-flip between them and
-    # silently halves the detected pitch. `find_peaks` returns peaks in
-    # increasing tau order, so `peaks[0]` is the shortest period — this is
-    # the standard YIN "absolute threshold" strategy for avoiding octave errors.
+    # Find highest peak in valid lag range
     region = acf[tau_min:tau_max]
     if len(region) == 0:
         return None
 
-    peaks, _ = find_peaks(region, height=0.25)
+    peaks, props = find_peaks(region, height=0.25)
     if len(peaks) == 0:
-        peaks, _ = find_peaks(region, height=0.1)
+        peaks, props = find_peaks(region, height=0.1)
     if len(peaks) == 0:
         return None
 
-    best_peak = peaks[0]
+    best_peak = peaks[np.argmax(props["peak_heights"])]
     tau = best_peak + tau_min
 
     # Parabolic interpolation for sub-sample accuracy
@@ -424,22 +296,15 @@ def refine_f0_with_fft(signal: np.ndarray, sr: int, f0_estimate: float,
 # ─── Harmonic analysis ────────────────────────────────────────────────────────
 
 def analyze_harmonics(signal: np.ndarray, sr: int, f0: float,
-                      n_harmonics: int = 12, snr_min: float = 2.5) -> list[dict]:
+                      n_harmonics: int = 12) -> list[dict]:
     """
     Find harmonic partial amplitudes relative to the fundamental.
     Returns list of {n, ratio, freq, amplitude_rel, inharmonicity_cents}.
-
-    The spectrum is denoised via spectral subtraction before peak-picking, and
-    any candidate peak that does not exceed `snr_min` times the local noise
-    floor is treated as absent (amplitude 0) rather than mistaken for a partial.
     """
     n_fft = min(len(signal), 65536)
     seg   = signal[:n_fft] * np.hanning(n_fft)
     spec  = np.abs(np.fft.rfft(seg))
     freqs = np.fft.rfftfreq(n_fft, 1 / sr)
-
-    noise_floor  = estimate_noise_floor_fft(signal, sr, n_fft)
-    clean_spec   = denoise_spectrum(spec, noise_floor)
 
     freq_res = sr / n_fft  # Hz per FFT bin
 
@@ -460,18 +325,13 @@ def analyze_harmonics(signal: np.ndarray, sr: int, f0: float,
         if lo_idx >= hi_idx:
             continue
 
-        local_peak_idx = lo_idx + int(np.argmax(clean_spec[lo_idx:hi_idx]))
+        local_peak_idx = lo_idx + int(np.argmax(spec[lo_idx:hi_idx]))
         actual_freq    = float(freqs[local_peak_idx])
-
-        # Reject candidates that don't clear the noise floor by snr_min — these
-        # are noise, not a real partial, so they contribute amplitude 0.
-        local_noise = noise_floor[local_peak_idx]
-        raw_amp     = float(spec[local_peak_idx])
-        amplitude   = raw_amp if (local_noise < 1e-12 or raw_amp > snr_min * local_noise) else 0.0
+        amplitude      = float(spec[local_peak_idx])
 
         # Inharmonicity: deviation of actual from ideal harmonic, in cents
         ideal_freq        = f0 * k
-        if ideal_freq > 0 and amplitude > 0:
+        if ideal_freq > 0:
             inharmonicity_c = 1200.0 * np.log2(actual_freq / ideal_freq) if actual_freq > 0 else 0.0
         else:
             inharmonicity_c = 0.0
@@ -508,9 +368,7 @@ def find_spectral_partials(signal: np.ndarray, sr: int, f0: float,
     above a threshold, then express them as ratios to f0.
 
     This handles inharmonic instruments (gangsa, kendang) correctly because it
-    does NOT assume integer harmonic relationships. The spectrum is denoised
-    (spectral subtraction against an estimated noise floor) before peak-picking
-    so background hiss/hum is never mistaken for a partial.
+    does NOT assume integer harmonic relationships.
 
     Returns (ratios, amplitudes) normalised so the loudest partial = 1.0.
     """
@@ -519,15 +377,12 @@ def find_spectral_partials(signal: np.ndarray, sr: int, f0: float,
     spec  = np.abs(np.fft.rfft(seg))
     freqs = np.fft.rfftfreq(n_fft, 1 / sr)
 
-    noise_floor = estimate_noise_floor_fft(signal, sr, n_fft)
-    spec = denoise_spectrum(spec, noise_floor)
-
     # Restrict to audible range above min_freq
     lo_idx = int(min_freq * n_fft / sr)
     spec_region = spec[lo_idx:]
     freq_region = freqs[lo_idx:]
 
-    # Dynamic threshold: relative to the (denoised) global peak
+    # Dynamic threshold: relative to the global peak
     global_peak = float(np.max(spec_region))
     if global_peak < 1e-12:
         return [1.0], [1.0]
@@ -617,8 +472,10 @@ def measure_ombak(signal: np.ndarray, sr: int, f0: float) -> Optional[float]:
     if lo <= 0 or hi >= nyq:
         return None
 
-    filtered = bandpass_filter(signal, sr, lo, hi)
-    if filtered is signal:
+    try:
+        b, a = butter(4, [lo / nyq, hi / nyq], btype="bandpass")
+        filtered = filtfilt(b, a, signal)
+    except Exception:
         return None
 
     # Amplitude envelope via full-wave rectification + lowpass
@@ -658,11 +515,8 @@ def measure_ombak(signal: np.ndarray, sr: int, f0: float) -> Optional[float]:
     else:
         peak_idx = peaks[np.argmax(props["peak_heights"])]
 
-    # Noise floor: median envelope-spectrum energy OUTSIDE the ombak band —
-    # a real beating peak must clearly rise above this background level.
-    outside_mask = (env_freq < 1.0) | (env_freq > 20.0)
-    noise_level  = float(np.median(env_spec[outside_mask])) if np.any(outside_mask) else float(np.median(env_spec))
-    if region[peak_idx] < max(3.0 * noise_level, 0.05 * np.max(env_spec)):
+    # Require minimum amplitude relative to background (signal quality check)
+    if region[peak_idx] < 0.05 * np.max(env_spec):
         return None
 
     ombak_hz = float(freqs[peak_idx])
@@ -672,16 +526,11 @@ def measure_ombak(signal: np.ndarray, sr: int, f0: float) -> Optional[float]:
 # ─── Spectral features ────────────────────────────────────────────────────────
 
 def spectral_centroid(signal: np.ndarray, sr: int) -> float:
-    """Spectral centroid in Hz (weighted mean of frequencies).
-
-    Broadband noise biases the centroid towards its own flat energy
-    distribution, so the noise floor is subtracted first."""
+    """Spectral centroid in Hz (weighted mean of frequencies)."""
     n_fft = min(len(signal), 16384)
     seg   = signal[:n_fft] * np.hanning(n_fft)
     spec  = np.abs(np.fft.rfft(seg))
     freqs = np.fft.rfftfreq(n_fft, 1 / sr)
-    noise_floor = estimate_noise_floor_fft(signal, sr, n_fft)
-    spec = denoise_spectrum(spec, noise_floor)
     total = np.sum(spec)
     if total < 1e-12:
         return 0.0
@@ -898,7 +747,8 @@ def main():
         print()
 
     if args.check:
-        sys.exit(0 if len(missing) == 0 else 1)
+        all_found = all(len(v) == 0 for v in missing.values())
+        sys.exit(0 if all_found else 1)
 
     if total_found == 0:
         print("  Tidak ada file WAV ditemukan. Batalkan analisis.")

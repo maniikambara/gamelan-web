@@ -61,7 +61,8 @@ export default {
     const getRange = (key) => RANGES[key] ?? { min: 0, max: 1, step: 0.01 }
     const fmt      = (key) => {
       const v = props.params?.[key]
-      return v == null ? '—' : Number(v).toFixed(2)
+      if (v == null) return '—'
+      return key.endsWith('_ms') ? String(Math.round(v)) : Number(v).toFixed(2)
     }
 
     return { paramKeys, getLabel, getRange, fmt }

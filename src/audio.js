@@ -24,10 +24,10 @@ const _synthesizers = {
     const adsr = noteParams?.adsr || { attack_ms: 10, decay_ms: 5, sustain: 0.9, release_ms: 3000 }
     const isNadaKecil = noteIndex >= 5
     const defaultRatios = isNadaKecil ? [1.0, 2.61, 4.80] : [1.0, 2.76, 5.18]
-    const defaultAmps = isNadaKecil ? [1.0, 0.50, 0.25] : [1.0, 0.55, 0.28]
+    const defaultAmps   = isNadaKecil ? [1.0, 0.50, 0.25] : [1.0, 0.55, 0.28]
     const ratios = noteParams?.synth_ratios || defaultRatios
-    const amps = noteParams?.synth_amps || defaultAmps
-    const ombak = userParams.ombak ?? noteParams?.ombak_hz ?? 8
+    const amps   = noteParams?.synth_amps   || defaultAmps
+    const ombak = noteParams?.ombak_hz || 8
     const f0 = noteParams?.f0_hz || baseFreq
 
     // Override with user settings
@@ -88,37 +88,25 @@ const _synthesizers = {
 
   kendang(ctx, baseFreq, noteParams, userParams, noteIndex) {
     const now = ctx.currentTime
-    const f0 = noteParams?.f0_hz || baseFreq
+    // Kendang selalu memakai frekuensi nominal, BUKAN f0 hasil analisis FFT.
+    // Mode getar membran kendang bersifat inharmonik (pola nol fungsi Bessel),
+    // sehingga estimasi f0 berbasis autokorelasi tidak andal untuk instrumen ini
+    // (mis. Dag_belakang nominal 80 Hz teranalisis ~148 Hz). ADSR tetap boleh
+    // memakai hasil analisis; hanya frekuensi yang dikunci ke nilai nominal.
+    const f0  = baseFreq
     const masterGain = userParams.gain || 0.8
-
-    // Resonance: peaking EQ centered at the membrane's fundamental — models the
-    // drum shell/body resonance. Shared across all four strokes.
-    const resonance = userParams.resonance ?? 0.4
-    const connectResonant = (master, centerFreq) => {
-      if (resonance > 0.01) {
-        const peakEq = ctx.createBiquadFilter()
-        peakEq.type = 'peaking'
-        peakEq.frequency.value = centerFreq
-        peakEq.gain.value = resonance * 8
-        peakEq.Q.value = 1 + resonance * 6
-        master.connect(peakEq)
-        peakEq.connect(ctx.destination)
-      } else {
-        master.connect(ctx.destination)
-      }
-    }
 
     // Tut: kepala lanang muka tengah — tonal + bandpass noise, ADSR 3/50/8%/180
     if (noteIndex === 0) {
-      const adsr = noteParams?.adsr || { attack_ms: 3, decay_ms: 50, sustain: 0.08, release_ms: 180 }
-      const relMs = userParams.release_ms ?? adsr.release_ms
-      const dur = (adsr.attack_ms + adsr.decay_ms + relMs) / 1000
-      const depth = userParams.depth ?? 0.6
+      const adsr   = noteParams?.adsr || { attack_ms: 3, decay_ms: 50, sustain: 0.08, release_ms: 180 }
+      const relMs  = userParams.release_ms ?? adsr.release_ms
+      const dur    = (adsr.attack_ms + adsr.decay_ms + relMs) / 1000
+      const depth  = userParams.depth ?? 0.6
       const master = ctx.createGain()
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
       master.gain.exponentialRampToValueAtTime(0.001, now + dur)
-      connectResonant(master, f0)
+      master.connect(ctx.destination)
 
       const osc1 = ctx.createOscillator(); const g1 = ctx.createGain()
       osc1.type = 'sine'; osc1.frequency.value = f0
@@ -153,15 +141,15 @@ const _synthesizers = {
 
     // Pak: kepala lanang muka tepi — impulsif tajam, ADSR 2/18/2%/80
     if (noteIndex === 1) {
-      const adsr = noteParams?.adsr || { attack_ms: 2, decay_ms: 18, sustain: 0.02, release_ms: 80 }
-      const relMs = userParams.release_ms ?? adsr.release_ms
-      const dur = (adsr.attack_ms + adsr.decay_ms + relMs) / 1000
+      const adsr    = noteParams?.adsr || { attack_ms: 2, decay_ms: 18, sustain: 0.02, release_ms: 80 }
+      const relMs   = userParams.release_ms ?? adsr.release_ms
+      const dur     = (adsr.attack_ms + adsr.decay_ms + relMs) / 1000
       const dryness = userParams.dryness ?? 0.7
       const master = ctx.createGain()
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
       master.gain.exponentialRampToValueAtTime(0.001, now + dur)
-      connectResonant(master, f0)
+      master.connect(ctx.destination)
 
       const bufSize = ctx.sampleRate * dur
       const noiseBuffer = ctx.createBuffer(1, bufSize, ctx.sampleRate)
@@ -191,12 +179,12 @@ const _synthesizers = {
     // Dag: kepala wadon belakang terbuka — pitch-glide menurun resonan, ADSR 5/60/12%/200
     if (noteIndex === 2) {
       const adsr = noteParams?.adsr || { attack_ms: 5, decay_ms: 60, sustain: 0.12, release_ms: 200 }
-      const dur = (adsr.attack_ms + adsr.decay_ms + (userParams.release_ms ?? adsr.release_ms)) / 1000
+      const dur  = (adsr.attack_ms + adsr.decay_ms + (userParams.release_ms ?? adsr.release_ms)) / 1000
       const master = ctx.createGain()
       master.gain.setValueAtTime(0, now)
       master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
       master.gain.exponentialRampToValueAtTime(0.001, now + dur)
-      connectResonant(master, f0)
+      master.connect(ctx.destination)
 
       const osc = ctx.createOscillator()
       osc.type = 'sine'
@@ -211,12 +199,12 @@ const _synthesizers = {
 
     // Dug: kepala wadon belakang dalam — pitch-glide menurun bass, ADSR 4/40/5%/120
     const adsr = noteParams?.adsr || { attack_ms: 4, decay_ms: 40, sustain: 0.05, release_ms: 120 }
-    const dur = (adsr.attack_ms + adsr.decay_ms + (userParams.release_ms ?? adsr.release_ms)) / 1000
+    const dur  = (adsr.attack_ms + adsr.decay_ms + (userParams.release_ms ?? adsr.release_ms)) / 1000
     const master = ctx.createGain()
     master.gain.setValueAtTime(0, now)
     master.gain.linearRampToValueAtTime(masterGain, now + adsr.attack_ms / 1000)
     master.gain.exponentialRampToValueAtTime(0.001, now + dur)
-    connectResonant(master, f0)
+    master.connect(ctx.destination)
 
     const osc = ctx.createOscillator()
     osc.type = 'sine'
@@ -229,23 +217,22 @@ const _synthesizers = {
 
   suling(ctx, baseFreq, noteParams, userParams) {
     const now = ctx.currentTime
-    const f0 = noteParams?.f0_hz || baseFreq
+    const f0  = noteParams?.f0_hz || baseFreq
     const adsr = noteParams?.adsr || { attack_ms: 100, decay_ms: 80, sustain: 0.88, release_ms: 600 }
-
+    
     // Gunakan durasi sampel asli (sekitar 4-6 detik), atau default ke 5 detik jika tidak ada
-    const dur = noteParams?.duration_s || 5.0
+    const dur  = noteParams?.duration_s || 5.0
     const breath = (userParams.breath ?? 0.18) * Math.sqrt(f0 / 558.0)
 
     const master = ctx.createGain()
     master.gain.setValueAtTime(0, now)
-
+    
     // Slow, breathy attack typical for suling
     const attackSec = Math.max(0.05, (userParams.attack_ms ?? adsr.attack_ms) / 1000)
     master.gain.linearRampToValueAtTime(userParams.gain || 0.7, now + attackSec)
-
-    // Sustain, then release over user-controlled release time before the sample ends
-    const releaseSec = Math.max(0.05, (userParams.release_ms ?? adsr.release_ms) / 1000)
-    master.gain.setTargetAtTime(0, now + Math.max(attackSec, dur - releaseSec), releaseSec / 3)
+    
+    // Sustain until the natural end of the sample duration
+    master.gain.setTargetAtTime(0, now + dur - 0.2, 0.15)
 
     // Resonance: lowpass filter sculpts the harmonic texture; higher resonance = darker, rounder tone
     const resonance = userParams.resonance ?? 0.4
@@ -262,7 +249,7 @@ const _synthesizers = {
 
     const oscs = []
     const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
-    const amps = noteParams?.synth_amps || [1.0, 0.22, 0.05]
+    const amps   = noteParams?.synth_amps   || [1.0, 0.22, 0.05]
 
     // Vibrato (Suling Bali has very strong, expressive vibrato)
     const vibratoOsc = ctx.createOscillator()
@@ -279,9 +266,9 @@ const _synthesizers = {
       const amp = amps[i] || 0
       if (amp < 0.001) return
       const osc = ctx.createOscillator(); const g = ctx.createGain()
-      osc.type = 'sine';
+      osc.type = 'sine'; 
       osc.frequency.value = f0 * r
-
+      
       // Connect vibrato to each harmonic, scaled by its ratio so it stays in tune
       const harmonicVibGain = ctx.createGain()
       harmonicVibGain.gain.value = r
@@ -304,7 +291,7 @@ const _synthesizers = {
         const u1 = Math.random() || 1e-10
         const u2 = Math.random()
         const mag = 0.18 * Math.sqrt(-2.0 * Math.log(u1))
-        data[i] = mag * Math.cos(2.0 * Math.PI * u2)
+        data[i]     = mag * Math.cos(2.0 * Math.PI * u2)
         if (i + 1 < noiseFrames) data[i + 1] = mag * Math.sin(2.0 * Math.PI * u2)
       }
       const noiseSource = ctx.createBufferSource()
@@ -395,7 +382,7 @@ export class AudioEngine {
   playNote(instrument, noteIndex, noteName, freq, params) {
     this.resume()
     const key = `${instrument}/${noteName}`
-
+    
     // Suling is monophonic: mute any currently playing suling note
     if (instrument === 'suling') {
       for (const activeKey in this.activeSources) {
@@ -410,7 +397,7 @@ export class AudioEngine {
     const noteParams = this.synthParams[instrument]?.[noteName]
 
     const result = this._procedural(instrument, noteIndex, freq, params, noteParams)
-
+    
     if (result) {
       this.activeSources[key] = {
         gainNode: result.gainNode,
@@ -430,7 +417,6 @@ export class AudioEngine {
     // Record event for later export
     if (this.isRecording) {
       this.recordingEvents.push({
-        type: 'play',
         timestamp_ms: Date.now() - this.recordStartTime,
         instrument,
         noteName,
@@ -445,8 +431,8 @@ export class AudioEngine {
   }
 
   /**
-   * Mute (damp) a note — stops the active sound source with a quick 30ms
-   * fade so it doesn't click.
+   * Mute (damp) a note — stops the active sound source with a quick 10ms
+   * exponential fade so it doesn't click.
    *
    * @param {string} instrument
    * @param {string} noteName
@@ -454,19 +440,6 @@ export class AudioEngine {
   muteNote(instrument, noteName) {
     const key = `${instrument}/${noteName}`
     const active = this.activeSources[key]
-
-    // Record event for later export — even if the source already ended
-    // naturally (active undefined), we still want the mute timestamp so a
-    // manual mute that lands just as the note was fading is captured.
-    if (this.isRecording) {
-      this.recordingEvents.push({
-        type: 'mute',
-        timestamp_ms: Date.now() - this.recordStartTime,
-        instrument,
-        noteName,
-      })
-    }
-
     if (!active) return
 
     const { gainNode, oscillators } = active
@@ -475,7 +448,7 @@ export class AudioEngine {
     setTimeout(() => {
       if (oscillators) {
         for (const osc of oscillators) {
-          try { osc.stop() } catch (_) { }
+          try { osc.stop() } catch (_) {}
         }
       }
     }, 60)
@@ -516,21 +489,16 @@ export class AudioEngine {
     this.isRecording = false
 
     try {
-      const sr = this.ctx.sampleRate
-      const allEvents = this.recordingEvents
-      if (!allEvents || allEvents.length === 0) {
+      const sr     = this.ctx.sampleRate
+      const events = this.recordingEvents
+      if (!events || events.length === 0) {
         return { url: '', blob: null }
       }
 
-      // Pair each play event with the mute event (if any) that actually
-      // stopped it live, so the export reproduces the same held duration —
-      // not the note's full natural envelope regardless of how it was played.
-      const events = this._pairMuteEvents(allEvents)
-
-      const maxOffset = Math.max(...allEvents.map(e => e.timestamp_ms)) / 1000
+      const maxOffset  = Math.max(...events.map(e => e.timestamp_ms)) / 1000
       const bufferSecs = maxOffset + 5.0
       const frameCount = Math.ceil(bufferSecs * sr)
-      const mix = new Float32Array(frameCount)
+      const mix        = new Float32Array(frameCount)
 
       for (const ev of events) {
         const startFrame = Math.floor(ev.timestamp_ms / 1000 * sr)
@@ -551,44 +519,14 @@ export class AudioEngine {
     }
   }
 
-  /**
-   * Pair each 'play' event with the 'mute' event (if any) that actually
-   * stopped it live — bounded by the next 'play' of the same note, so a
-   * later mute of a *different* strike of the same note isn't misattributed.
-   * Returns play events only, each annotated with `heldSecs` when a matching
-   * mute was found (undefined otherwise, meaning "let it ring naturally").
-   */
-  _pairMuteEvents(allEvents) {
-    const plays = allEvents.filter(e => e.type !== 'mute')
-    const mutes = allEvents.filter(e => e.type === 'mute')
-
-    return plays.map(ev => {
-      let nextPlayTs = Infinity
-      for (const p of plays) {
-        if (p !== ev && p.instrument === ev.instrument && p.noteName === ev.noteName &&
-            p.timestamp_ms > ev.timestamp_ms && p.timestamp_ms < nextPlayTs) {
-          nextPlayTs = p.timestamp_ms
-        }
-      }
-      let muteAtMs = null
-      for (const m of mutes) {
-        if (m.instrument === ev.instrument && m.noteName === ev.noteName &&
-            m.timestamp_ms > ev.timestamp_ms && m.timestamp_ms < nextPlayTs) {
-          if (muteAtMs === null || m.timestamp_ms < muteAtMs) muteAtMs = m.timestamp_ms
-        }
-      }
-      return muteAtMs === null ? ev : { ...ev, heldSecs: (muteAtMs - ev.timestamp_ms) / 1000 }
-    })
-  }
-
   /** Procedural note mixing for the recording export. */
   _mixProcedural(mix, startFrame, ev, sr) {
-    const { instrument, noteIndex, freq, params, noteParams, heldSecs } = ev
-
+    const { instrument, noteIndex, freq, params, noteParams } = ev
+    
     const adsr = noteParams?.adsr || { attack_ms: 10, decay_ms: 5, sustain: 0.9, release_ms: 3000 }
     const f0 = noteParams?.f0_hz || freq
-
-    const isTung = noteIndex % 2 === 0
+    
+    const isTung  = noteIndex % 2 === 0
     let durSecs
     if (instrument === 'kendang') {
       // 0=Tut: tonal medium, 1=Pak: impulsive slap, 2=Dag: resonant bass, 3=Dug: deep bass
@@ -599,35 +537,27 @@ export class AudioEngine {
     } else {
       durSecs = adsr.release_ms / 1000 + 0.5
     }
-
-    // Note was muted/released early during the live take — cut the export
-    // off at the same point with a quick fade, matching muteNote()'s fade,
-    // instead of always rendering the note's full natural envelope.
-    const MUTE_FADE_SECS = 0.05
-    if (heldSecs != null) {
-      durSecs = Math.min(durSecs, Math.max(0, heldSecs) + MUTE_FADE_SECS)
-    }
-
-    const frames = Math.ceil(durSecs * sr)
-    const gain = params?.gain ?? 0.8
+    const frames  = Math.ceil(durSecs * sr)
+    const gain    = params?.gain ?? 0.8
     const attackSec = Math.max(0.005, adsr.attack_ms / 1000)
 
     for (let i = 0; i < frames; i++) {
-      const t = i / sr
+      const t   = i / sr
       const dest = startFrame + i
       if (dest >= mix.length) break
 
       let sample = 0
-
+      
       // Simple envelope
       const att = Math.min(t / attackSec, 1.0)
-
+      
       if (instrument === 'gangsa') {
         const env = att * Math.exp(-t * 1.5)
-        const ratios = noteParams?.synth_ratios || [1.0, 2.756, 5.404]
-        const amps = noteParams?.synth_amps || [1.0, 0.55, 0.28]
-        const ombak = noteParams?.ombak_hz || 6
-
+        const isNadaKecil = noteIndex >= 5
+        const ratios = noteParams?.synth_ratios || (isNadaKecil ? [1.0, 2.61, 4.80] : [1.0, 2.76, 5.18])
+        const amps = noteParams?.synth_amps || (isNadaKecil ? [1.0, 0.50, 0.25] : [1.0, 0.55, 0.28])
+        const ombak = noteParams?.ombak_hz || 8
+        
         for (let j = 0; j < ratios.length; j++) {
           sample += amps[j] * Math.sin(2 * Math.PI * f0 * ratios[j] * t) * env
           if (j < 3) {
@@ -636,11 +566,11 @@ export class AudioEngine {
         }
       } else if (instrument === 'kendang') {
         const env = att * Math.exp(-t * (isTung ? 8 : 40))
-        const f = f0 * Math.exp(-t * (isTung ? 4 : 12))
+        const f   = f0 * Math.exp(-t * (isTung ? 4 : 12))
         sample = Math.sin(2 * Math.PI * f * t) * env
       } else if (instrument === 'suling') {
         const sAttack = Math.max(0.05, adsr.attack_ms / 1000)
-        const sSus = durSecs - sAttack - 0.2
+        const sSus    = durSecs - sAttack - 0.2
         let env = 0
         if (t < sAttack) {
           env = t / sAttack
@@ -651,22 +581,17 @@ export class AudioEngine {
           env = 0.88 * Math.exp(-relT / 0.15)
         }
         const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
-        const amps = noteParams?.synth_amps || [1.0, 0.22, 0.05]
+        const amps   = noteParams?.synth_amps   || [1.0, 0.22, 0.05]
         for (let j = 0; j < ratios.length; j++) {
           sample += amps[j] * Math.sin(2 * Math.PI * f0 * ratios[j] * t) * env
         }
       } else {
         const env = att * Math.exp(-t * 0.5)
         const ratios = noteParams?.synth_ratios || [1.0, 2.0, 3.0]
-        const amps = noteParams?.synth_amps || [1.0, 0.22, 0.05]
+        const amps   = noteParams?.synth_amps   || [1.0, 0.22, 0.05]
         for (let j = 0; j < ratios.length; j++) {
           sample += amps[j] * Math.sin(2 * Math.PI * f0 * ratios[j] * t) * env
         }
-      }
-
-      // Fast fade after the point the note was actually muted/released live
-      if (heldSecs != null && t > heldSecs) {
-        sample *= Math.exp(-(t - heldSecs) / 0.012)
       }
 
       mix[dest] += sample * gain
@@ -677,22 +602,22 @@ export class AudioEngine {
 
   _float32ToWav(samples, sampleRate) {
     const length = samples.length
-    const buf = new ArrayBuffer(44 + length * 2)
-    const view = new DataView(buf)
-    const write = (off, str) => {
+    const buf    = new ArrayBuffer(44 + length * 2)
+    const view   = new DataView(buf)
+    const write  = (off, str) => {
       for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i))
     }
     write(0, 'RIFF')
-    view.setUint32(4, 36 + length * 2, true)
+    view.setUint32(4,  36 + length * 2, true)
     write(8, 'WAVE')
     write(12, 'fmt ')
-    view.setUint32(16, 16, true)
-    view.setUint16(20, 1, true)   // PCM
-    view.setUint16(22, 1, true)   // mono
+    view.setUint32(16, 16,         true)
+    view.setUint16(20, 1,          true)   // PCM
+    view.setUint16(22, 1,          true)   // mono
     view.setUint32(24, sampleRate, true)
     view.setUint32(28, sampleRate * 2, true)
-    view.setUint16(32, 2, true)
-    view.setUint16(34, 16, true)
+    view.setUint16(32, 2,          true)
+    view.setUint16(34, 16,         true)
     write(36, 'data')
     view.setUint32(40, length * 2, true)
     let off = 44
@@ -711,7 +636,7 @@ export class AudioEngine {
   }
 
   clearRecording() {
-    this.recordedChunks = []
+    this.recordedChunks  = []
     this.recordingEvents = []
     this.recordStartTime = 0
   }

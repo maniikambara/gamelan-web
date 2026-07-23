@@ -60,10 +60,6 @@ import { reactive, onMounted, onUnmounted } from 'vue'
 
 const KEYS = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P']
 const KEY_TO_IDX = Object.fromEntries(KEYS.map((k, i) => [k.toLowerCase(), i]))
-// Dampening keys — same order/position as KEYS, one row below on a QWERTY
-// keyboard, mirroring how a gamelan player mutes a bar with the other hand.
-const MUTE_KEYS = ['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/']
-const MUTE_KEY_TO_IDX = Object.fromEntries(MUTE_KEYS.map((k, i) => [k.toLowerCase(), i]))
 const MUTE_ZONE_RATIO = 0.75
 
 // Per-bilah positions derived from the reference design (1365×765 container).
@@ -102,6 +98,7 @@ export default {
   emits: ['play-note', 'mute-note'],
   setup(props, { emit }) {
     const barStates = reactive({})
+    const heldKeys = new Set()
 
     const playBar = (i) => {
       const note = props.instrument.notes[i]
@@ -142,32 +139,31 @@ export default {
       }
     }
 
-    // Tap Q-P: strike the bar, it rings out naturally (no need to hold the
-    // key down for a long note — a real metallophone keeps ringing after
-    // the mallet lifts). Tap Z-/ (same column) to dampen that same bar,
-    // mirroring the two-handed strike-then-damp technique on a real gangsa.
     const onKeyDown = (e) => {
       if (e.repeat) return
-      const key = e.key.toLowerCase()
-      const playIdx = KEY_TO_IDX[key]
-      if (playIdx != null && playIdx < props.instrument.notes.length) {
-        e.preventDefault()
-        playBar(playIdx)
-        return
-      }
-      const muteIdx = MUTE_KEY_TO_IDX[key]
-      if (muteIdx != null && muteIdx < props.instrument.notes.length) {
-        e.preventDefault()
-        muteBar(muteIdx)
-      }
+      const idx = KEY_TO_IDX[e.key.toLowerCase()]
+      if (idx == null || idx >= props.instrument.notes.length) return
+      e.preventDefault()
+      heldKeys.add(idx)
+      playBar(idx)
+    }
+
+    const onKeyUp = (e) => {
+      const idx = KEY_TO_IDX[e.key.toLowerCase()]
+      if (idx == null || !heldKeys.has(idx)) return
+      e.preventDefault()
+      heldKeys.delete(idx)
+      muteBar(idx)
     }
 
     onMounted(() => {
       window.addEventListener('keydown', onKeyDown)
+      window.addEventListener('keyup', onKeyUp)
     })
 
     onUnmounted(() => {
       window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
     })
 
     return { BAR_STYLES, LABEL_STYLES, barStates, onBarDown, onBarTouch }

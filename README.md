@@ -4,7 +4,7 @@ Aplikasi web interaktif yang mereproduksi suara tiga instrumen tradisional Bali 
 
 ## Ringkasan Proyek
 
-Proyek akademis oleh Kelompok 1, Program Studi Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026. Sistem menyajikan pengalaman bermain instrumen gamelan secara virtual dengan pemodelan akustik berbasis data, antarmuka interaktif keyboard dan sentuh, serta kemampuan ekspor rekaman sesi ke format WAV.
+Proyek akademis oleh Kelompok 1, Program Studi Teknik Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026. Sistem menyajikan pengalaman bermain instrumen gamelan secara virtual dengan pemodelan akustik berbasis data, antarmuka interaktif keyboard dan sentuh, serta kemampuan ekspor rekaman sesi ke format WAV.
 
 ## Fitur Utama
 
@@ -25,30 +25,35 @@ Volume, resonansi, release, attack, kedalaman nada (Kendang Tut), kekeringan puk
 **Rekaman dan Ekspor WAV**
 Rekam sesi permainan secara langsung. Sistem me-render ulang seluruh nada secara prosedural dan mencampurnya ke dalam satu track, kemudian mengekspor sebagai file `.wav` yang dapat diunduh.
 
+**Mode Permainan Ritme**
+Mode gaya rhythm game (tile jatuh menuju garis ketuk) yang memakai chart lagu Bali (`src/charts/`) di atas instrumen dan `AudioEngine` yang sama persis dengan mode bebas -- tidak ada mesin sintesis baru. Ketepatan ketukan dinilai ke dalam empat kategori (Sempurna, Baik, Kurang, Terlewat) dengan skor dan sistem kombo. Karena suara tetap disintesis lewat jalur `AudioEngine.playNote()` yang sama, rekaman sesi tetap berfungsi tanpa modifikasi.
+
 **Unggah Sampel Kustom**
 Upload file `.wav` atau `.mp3` ke endpoint backend untuk menggantikan suara instrumen pada saat runtime.
 
 ## Arsitektur Sistem
 
 ```
-Frontend (Vue 3 + Vite)                    Backend (Python + FastAPI)
-┌─────────────────────────────┐            ┌──────────────────────────────┐
-│ App.vue                     │  /api/     │ api/index.py                 │
-│   Sidebar ── instrument nav │ ─────────▶ │   GET /api/analysis          │
-│   InstrumentPanel           │            │   GET /api/instruments       │
-│     GangsaPanel             │            │   POST /api/samples/{i}/{n}  │
-│     KendangPanel            │            │   GET /api/samples/{i}/{n}   │
-│     SulingPanel             │            │   POST /api/synthesize       │
-│   SettingsPanel ── sliders  │            │   POST /api/export-recording │
-│   RecordingPanel            │            │   GET /api/health            │
-│                             │            │                              │
-│ audio.js (AudioEngine)      │            │ analyze_samples.py           │
-│   Web Audio API synthesis   │            │   analisis FFT sampel audio  │
-│   WAV export (offline)      │            │   → synthesis_params.json    │
-│   Recording event log       │            │                              │
-│ instruments.js              │            │ api/samples/                 │
-│   frekuensi, konfigurasi    │            │   gangsa/, kendang/, suling/ │
-└─────────────────────────────┘            └──────────────────────────────┘
+Frontend (Vue 3 + Vite)                                   Backend (Python + FastAPI)
+┌──────────────────────────────────────────┐           ┌────────────────────────────────┐
+│ App.vue                                  │  /api/    │ api/index.py                   │
+│   Sidebar (instrumen + Mode Permainan)   │ ────────▶ │   GET /api/analysis            │
+│   InstrumentPanel                        │           │   GET /api/instruments         │
+│     Gangsa / Kendang / Suling Panel      │           │   POST /api/samples/{i}/{n}    │
+│   RhythmGamePanel                        │           │   GET /api/samples/{i}/{n}     │
+│     SongSelectMenu / NoteHighway /       │           │   POST /api/synthesize         │
+│     JudgmentDisplay                      │           │   POST /api/export-recording   │
+│   SettingsPanel -- sliders               │           │   GET /api/health              │
+│   RecordingPanel                         │           │                                │
+│                                          │           │ analyze_samples.py             │
+│ audio.js (AudioEngine)                   │           │   analisis FFT sampel audio    │
+│   Web Audio API synthesis                │           │   -> synthesis_params.json     │
+│   WAV export (offline)                   │           │                                │
+│   Recording event log                    │           │ api/samples/                   │
+│ instruments.js                           │           │   gangsa/, kendang/, suling/   │
+│   composables/ (rhythm engine,           │           │                                │
+│   chart loader)                          │           │                                │
+└──────────────────────────────────────────┘           └────────────────────────────────┘
 ```
 
 ## Model Sintesis
@@ -107,23 +112,6 @@ python analyze_samples.py
 
 Output: `api/synthesis_params.json` berisi parameter FFT per nada (f0, rasio harmonik, amplitudo, ombak, ADSR).
 
-### Visualisasi Hasil Sintesis
-
-Skrip `api/visualize_synthesis.py` mensintesis seluruh nada dari ketiga instrumen menggunakan fungsi sintesis yang identik dengan `api/index.py`, lalu menghasilkan grafik analisis akustik dengan matplotlib:
-
-```bash
-cd api
-python visualize_synthesis.py
-```
-
-Output tersimpan di `api/visualizations/`:
-
-- `waveform_gangsa.png`, `waveform_kendang.png`, `waveform_suling.png` — bentuk gelombang seluruh nada per instrumen
-- `fft_spectrum_gangsa_dong.png` — spektrum FFT Gangsa nada Dong (261 Hz), menandai puncak parsial inharmonik `[1,0; 2,76; 5,18]`
-- `adsr_comparison.png` — perbandingan selubung ADSR antara Gangsa, Kendang (Tut), dan Suling
-- `spectrogram_suling.png` — spektrogram nada Suling menampilkan modulasi vibrato dan noise hembusan
-- `gangsa_partial_ratios.png` — perbandingan rasio parsial bilah nada besar vs bilah nada kecil
-
 ### Build Produksi
 
 ```bash
@@ -142,24 +130,33 @@ gamelan-web/
 │   ├── instruments.js                   # Konfigurasi nada, frekuensi, deteksi klik
 │   ├── main.js                          # Entry point Vue 3
 │   ├── style.css                        # Global styles
+│   ├── charts/                          # Chart lagu untuk Mode Permainan Ritme (JSON)
+│   │   ├── putri-cening-ayu.json
+│   │   └── janger.json
+│   ├── composables/
+│   │   ├── useRhythmEngine.js           # Game loop, judgment, skor (logika murni)
+│   │   └── useChartLoader.js            # Pemuatan & validasi chart dari src/charts/
 │   └── components/
 │       ├── Header.vue
 │       ├── Sidebar.vue
 │       ├── InstrumentPanel.vue          # Router ke panel per instrumen
 │       ├── SettingsPanel.vue            # Slider parameter audio
 │       ├── RecordingPanel.vue           # Kontrol rekaman + download WAV
-│       └── instruments/
-│           ├── GangsaPanel.vue          # Bilah gangsa interaktif dengan keyboard
-│           ├── KendangPanel.vue         # Dua muka drum dengan canvas hit detection
-│           └── SulingPanel.vue          # Canvas suling + tombol nada + visualisasi lubang
+│       ├── instruments/
+│       │   ├── GangsaPanel.vue          # Bilah gangsa interaktif dengan keyboard
+│       │   ├── KendangPanel.vue         # Dua muka drum dengan canvas hit detection
+│       │   └── SulingPanel.vue          # Canvas suling + tombol nada + visualisasi lubang
+│       └── rhythm/
+│           ├── RhythmGamePanel.vue      # Orkestrator mode permainan (fase & input)
+│           ├── SongSelectMenu.vue       # Daftar lagu yang tersedia
+│           ├── NoteHighway.vue          # Render tile jatuh via Canvas 2D
+│           └── JudgmentDisplay.vue      # Skor, kombo, akurasi, flash judgment
 ├── api/
 │   ├── index.py                         # FastAPI: synthesis, sample management, export
 │   ├── analyze_samples.py               # FFT analysis → synthesis_params.json
-│   ├── visualize_synthesis.py           # Visualisasi matplotlib hasil sintesis (waveform, FFT, ADSR, spektrogram)
 │   ├── synthesis_params.json            # Parameter akustik per nada (hasil analisis)
 │   ├── requirements.txt                 # Dependensi Python
 │   ├── samples/                         # Sampel audio default per instrumen
-│   ├── visualizations/                  # Output PNG dari visualize_synthesis.py
 │   └── SAMPLES_README.md
 ├── public/assets/                       # Gambar instrumen (PNG, SVG)
 ├── assets/                              # Source asset sebelum build
@@ -172,8 +169,8 @@ gamelan-web/
 
 **Frontend**: Vue 3.4, Vite 6.0, @vitejs/plugin-vue 5.0
 
-**Backend**: FastAPI, uvicorn, numpy, scipy, pydub (opsional, untuk MP3), matplotlib (opsional, untuk `visualize_synthesis.py`)
+**Backend**: FastAPI, uvicorn, numpy, scipy, pydub (opsional, untuk MP3)
 
 ## Kredit
 
-Dikembangkan oleh Kelompok 1, Program Studi Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026.
+Dikembangkan oleh Kelompok 1, Program Studi Teknik Informatika, Fakultas Matematika dan Ilmu Pengetahuan Alam, Universitas Udayana, 2026.

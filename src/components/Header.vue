@@ -4,7 +4,7 @@
       <img src="/assets/logo.svg" alt="Logo" class="header-logo" />
       <div class="header-titles">
         <div class="header-title">GAMELAN BALI SYNTHESIZER</div>
-        <div class="header-subtitle">Kelompok 1 · Informatika FMIPA UNUD · 2026</div>
+        <div class="header-subtitle">Kelompok 1 · Teknik Informatika FMIPA UNUD · 2026</div>
       </div>
     </div>
     <div class="header-right">

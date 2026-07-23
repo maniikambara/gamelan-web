@@ -251,6 +251,9 @@ def synth_gangsa(freq: float, resonance: float = 0.5, gain: float = 0.8,
     np_ = _get_note_params("gangsa", note_name)
     adsr_p = np_.get("adsr", {})
 
+    # rasio & amplitudo dihitung relatif terhadap f0 HASIL ANALISIS,
+    # bukan freq nominal -- f0 wajib diambil dari sumber yang sama
+    f0 = np_.get("f0_hz", freq)
     ratios = np_.get("synth_ratios", [1.0, 2.756, 5.404, 8.933, 13.35])
     amps   = np_.get("synth_amps",   [1.0, 0.55,  0.28,  0.14,  0.07 ])
     attack = adsr_p.get("attack_ms", 12)
@@ -262,31 +265,23 @@ def synth_gangsa(freq: float, resonance: float = 0.5, gain: float = 0.8,
 
     dur = 3.0 + release_ms / 1000
     t   = np.linspace(0, dur, int(SAMPLE_RATE * dur), endpoint=False)
-    audio = sum(a * np.sin(2 * np.pi * freq * r * t) for r, a in zip(ratios, amps))
+    audio = sum(a * np.sin(2 * np.pi * f0 * r * t) for r, a in zip(ratios, amps))
     # Ombak: detuned copy of lowest 3 partials
     n_ombak = min(3, len(ratios))
     audio += 0.45 * sum(
-        amps[i] * np.sin(2 * np.pi * (freq * ratios[i] + ombak) * t)
+        amps[i] * np.sin(2 * np.pi * (f0 * ratios[i] + ombak) * t)
         for i in range(n_ombak)
     )
     bw   = max(60, (1 - resonance) * 1800 + 60)
-    filt = _bandpass(audio, max(30, freq - bw), freq + bw, SAMPLE_RATE)
+    filt = _bandpass(audio, max(30, f0 - bw), f0 + bw, SAMPLE_RATE)
     audio = (1 - resonance * 0.6) * audio + resonance * 0.6 * filt
     audio = _adsr(audio, SAMPLE_RATE, attack, decay, sustain, release_ms)
     return _to_wav(_normalize(audio) * gain)
 
 
-def _apply_kendang_resonance(audio: np.ndarray, freq: float, resonance: float, sr: int) -> np.ndarray:
-    """Emphasize the band around the membrane's fundamental — models drum shell resonance."""
-    if resonance <= 0.02:
-        return audio
-    res_filt = _bandpass(audio, max(20, freq * 0.7), freq * 1.5, sr)
-    return (1 - resonance * 0.5) * audio + resonance * 0.5 * res_filt
-
-
 def synth_kendang_tengah(freq: float, gain: float = 0.8,
                          depth: float = 0.6, release_ms: float = 180,
-                         resonance: float = 0.4, note_name: str = "") -> bytes:
+                         note_name: str = "") -> bytes:
     np_ = _get_note_params("kendang", note_name)
     adsr_p = np_.get("adsr", {})
     attack = adsr_p.get("attack_ms", 3)
@@ -299,14 +294,13 @@ def synth_kendang_tengah(freq: float, gain: float = 0.8,
     noise = np.random.normal(0, 1, len(t)).astype(np.float32)
     noise = _bandpass(noise, max(20, freq * 0.4), freq * 2.2, SAMPLE_RATE)
     audio = depth * tonal + (1 - depth) * noise
-    audio = _apply_kendang_resonance(audio, freq, resonance, SAMPLE_RATE)
     audio = _adsr(audio, SAMPLE_RATE, attack, decay, sustain, release_ms)
     return _to_wav(_normalize(audio) * gain)
 
 
 def synth_kendang_pinggir(freq: float, gain: float = 0.8,
                           dryness: float = 0.7, release_ms: float = 80,
-                          resonance: float = 0.4, note_name: str = "") -> bytes:
+                          note_name: str = "") -> bytes:
     np_ = _get_note_params("kendang", note_name)
     adsr_p = np_.get("adsr", {})
     attack = adsr_p.get("attack_ms", 2)
@@ -319,13 +313,12 @@ def synth_kendang_pinggir(freq: float, gain: float = 0.8,
     noise = _bandpass(noise, freq * 0.8, min(freq * 3.5, 8000), SAMPLE_RATE)
     click = np.exp(-t * 60) * np.sin(2 * np.pi * freq * 2 * t)
     audio = dryness * noise + (1 - dryness) * click
-    audio = _apply_kendang_resonance(audio, freq, resonance, SAMPLE_RATE)
     audio = _adsr(audio, SAMPLE_RATE, attack, decay, sustain, release_ms)
     return _to_wav(_normalize(audio) * gain)
 
 
-def synth_dag(freq: float, gain: float = 0.8, release_ms: float = 200,
-              resonance: float = 0.4, note_name: str = "") -> bytes:
+def synth_dag(freq: float, gain: float = 0.8,
+              release_ms: float = 200, note_name: str = "") -> bytes:
     """Dag: kepala wadon belakang terbuka — pitch-glide menurun resonan, ADSR 5/60/12%/200ms."""
     np_ = _get_note_params("kendang", note_name)
     adsr_p = np_.get("adsr", {})
@@ -342,13 +335,12 @@ def synth_dag(freq: float, gain: float = 0.8, release_ms: float = 200,
     audio    = np.sin(phase).astype(np.float32)
     filt     = _bandpass(audio, max(20, freq * 0.5), freq * 5, SAMPLE_RATE)
     audio    = 0.7 * audio + 0.3 * filt
-    audio    = _apply_kendang_resonance(audio, freq, resonance, SAMPLE_RATE)
     audio    = _adsr(audio, SAMPLE_RATE, attack, decay, sustain, release_ms)
     return _to_wav(_normalize(audio) * gain)
 
 
-def synth_dug(freq: float, gain: float = 0.8, release_ms: float = 120,
-              resonance: float = 0.4, note_name: str = "") -> bytes:
+def synth_dug(freq: float, gain: float = 0.8,
+              release_ms: float = 120, note_name: str = "") -> bytes:
     """Dug: kepala wadon belakang dalam — pitch-glide menurun bass, ADSR 4/40/5%/120ms."""
     np_ = _get_note_params("kendang", note_name)
     adsr_p = np_.get("adsr", {})
@@ -363,7 +355,6 @@ def synth_dug(freq: float, gain: float = 0.8, release_ms: float = 120,
     freq_env = np.clip(freq_env, freq * 0.5, freq)
     phase    = np.cumsum(2 * np.pi * freq_env / SAMPLE_RATE)
     audio    = np.sin(phase).astype(np.float32)
-    audio    = _apply_kendang_resonance(audio, freq, resonance, SAMPLE_RATE)
     audio    = _adsr(audio, SAMPLE_RATE, attack, decay, sustain, release_ms)
     return _to_wav(_normalize(audio) * gain)
 
@@ -373,6 +364,9 @@ def synth_suling(freq: float, gain: float = 0.8,
                  release_ms: float = 600, note_name: str = "") -> bytes:
     np_ = _get_note_params("suling", note_name)
     adsr_p = np_.get("adsr", {})
+    # f0 hasil analisis dipakai penuh untuk Suling (selaras dengan Gangsa dan
+    # dengan _synthesizers.suling di audio.js), bukan freq nominal
+    f0 = np_.get("f0_hz", freq)
     # Use analyzed harmonics if available
     ratios = np_.get("synth_ratios", [1.0, 2.0, 3.0])
     harm_amps = np_.get("synth_amps", [1.0, 0.22, 0.05])
@@ -382,11 +376,11 @@ def synth_suling(freq: float, gain: float = 0.8,
 
     dur = 4.0
     t   = np.linspace(0, dur, int(SAMPLE_RATE * dur), endpoint=False)
-    audio = sum(a * np.sin(2 * np.pi * freq * r * t)
+    audio = sum(a * np.sin(2 * np.pi * f0 * r * t)
                 for r, a in zip(ratios, harm_amps)).astype(np.float32)
     noise = np.random.normal(0, 0.18, len(t)).astype(np.float32)
-    noise = _bandpass(noise, max(30, freq * 0.7), min(freq * 4, 8000), SAMPLE_RATE)
-    noise_breath = breath * np.sqrt(freq / 558.0)
+    noise = _bandpass(noise, max(30, f0 * 0.7), min(f0 * 4, 8000), SAMPLE_RATE)
+    noise_breath = breath * np.sqrt(f0 / 558.0)
     audio += noise_breath * noise
     audio = _adsr(audio, SAMPLE_RATE, attack_used, decay, sustain, release_ms)
     return _to_wav(_normalize(audio) * gain)
@@ -497,23 +491,19 @@ async def play_note(request: Request):
             wav = synth_kendang_tengah(freq, p.get("gain", 0.8),
                                        p.get("depth", 0.6),
                                        p.get("release_ms", 180),
-                                       p.get("resonance", 0.4),
                                        note_name=note_name)
         elif idx == 1:
             wav = synth_kendang_pinggir(freq, p.get("gain", 0.8),
                                         p.get("dryness", 0.7),
                                         p.get("release_ms", 80),
-                                        p.get("resonance", 0.4),
                                         note_name=note_name)
         elif idx == 2:
             wav = synth_dag(freq, p.get("gain", 0.8),
                             p.get("release_ms", 200),
-                            p.get("resonance", 0.4),
                             note_name=note_name)
         else:
             wav = synth_dug(freq, p.get("gain", 0.8),
                             p.get("release_ms", 120),
-                            p.get("resonance", 0.4),
                             note_name=note_name)
     elif inst == "suling":
         wav = synth_suling(freq, p.get("gain",0.8),
@@ -555,23 +545,19 @@ async def synthesize(request: Request):
             wav = synth_kendang_tengah(freq, p.get("gain", 0.8),
                                        p.get("depth", 0.6),
                                        p.get("release_ms", 180),
-                                       p.get("resonance", 0.4),
                                        note_name=note_name)
         elif idx == 1:
             wav = synth_kendang_pinggir(freq, p.get("gain", 0.8),
                                         p.get("dryness", 0.7),
                                         p.get("release_ms", 80),
-                                        p.get("resonance", 0.4),
                                         note_name=note_name)
         elif idx == 2:
             wav = synth_dag(freq, p.get("gain", 0.8),
                             p.get("release_ms", 200),
-                            p.get("resonance", 0.4),
                             note_name=note_name)
         else:
             wav = synth_dug(freq, p.get("gain", 0.8),
                             p.get("release_ms", 120),
-                            p.get("resonance", 0.4),
                             note_name=note_name)
     elif inst == "suling":
         wav = synth_suling(freq, p.get("gain",0.8),

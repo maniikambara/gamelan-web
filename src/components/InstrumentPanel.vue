@@ -47,11 +47,11 @@ export default {
     const hintText = computed(() => {
       switch (props.instrument.key) {
         case 'gangsa':
-          return 'Keyboard Q–P = pukul (berdengung natural) · Z–/ = redam bilah yang sama · Klik tengah bilah = pukul · Klik bawah bilah = redam'
+          return 'Keyboard Q–P · Klik tengah bilah = pukul · Klik bawah bilah = mute · Tahan keyboard = mute saat dilepas'
         case 'kendang':
           return 'Keyboard A Tut_muka · S Pak_muka · D Dag_belakang · F Dug_belakang · Klik pada area drum'
         case 'suling':
-          return 'Tahan keyboard 1-0 atau tombol nada untuk membunyikan · lepas untuk berhenti'
+          return 'Keyboard 1-0 · Klik tombol nada di atas suling'
         default:
           return ''
       }

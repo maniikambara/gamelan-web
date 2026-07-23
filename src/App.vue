@@ -19,13 +19,23 @@
     <Sidebar
       :instruments="instruments"
       :activeInstrument="currentInstrument"
+      :currentView="currentView"
       @select="selectInstrument"
+      @select-rhythm="selectRhythmMode"
     />
     <main class="app-main">
       <InstrumentPanel
+        v-if="currentView === 'instrument'"
         :instrument="instruments[currentInstrument]"
         @play-note="playNote"
         @mute-note="muteNote"
+      />
+      <RhythmGamePanel
+        v-else
+        :instruments="instruments"
+        :audioEngine="audioEngine"
+        @play-note="playNote"
+        @instrument-active="syncRhythmInstrument"
       />
     </main>
     <aside class="app-right">
@@ -50,15 +60,17 @@ import { AudioEngine } from './audio'
 import Header from './components/Header.vue'
 import Sidebar from './components/Sidebar.vue'
 import InstrumentPanel from './components/InstrumentPanel.vue'
+import RhythmGamePanel from './components/rhythm/RhythmGamePanel.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import RecordingPanel from './components/RecordingPanel.vue'
 export default {
   components: {
-    Header, Sidebar, InstrumentPanel, SettingsPanel, RecordingPanel,
+    Header, Sidebar, InstrumentPanel, RhythmGamePanel, SettingsPanel, RecordingPanel,
   },
   setup() {
     const instruments        = INSTRUMENTS
     const currentInstrument  = ref('gangsa')
+    const currentView        = ref('instrument') // 'instrument' | 'rhythm'
     const lastNote           = ref(null)
     const lastSynthMode      = ref('synth')
     const paramsReady        = ref(false)
@@ -81,17 +93,27 @@ export default {
     })
 
     // ── Instrument selection ───────────────────────────────────────────────
-    const selectInstrument = (key) => { currentInstrument.value = key }
+    const selectInstrument = (key) => {
+      currentInstrument.value = key
+      currentView.value = 'instrument'
+    }
+
+    // ── Mode Permainan Ritme ────────────────────────────────────────────────
+    const selectRhythmMode = () => { currentView.value = 'rhythm' }
+    // Menyamakan tema/parameter aktif dengan instrumen pada chart yang dimuat,
+    // TANPA mengganti currentView (agar tidak keluar dari mode permainan)
+    const syncRhythmInstrument = (key) => { currentInstrument.value = key }
 
     // ── Note playback ──────────────────────────────────────────────────────
-    const playNote = ({ noteIndex, noteName, freq, positionGain }) => {
+    const playNote = ({ instrument, noteIndex, noteName, freq, positionGain }) => {
+      const inst = instrument || currentInstrument.value
       lastNote.value = noteName
-      const noteParams = { ...params[currentInstrument.value] }
+      const noteParams = { ...params[inst] }
       if (positionGain !== undefined) {
         noteParams.gain = (noteParams.gain || 0.8) * positionGain
       }
       const mode = audioEngine.playNote(
-        currentInstrument.value, noteIndex, noteName, freq,
+        inst, noteIndex, noteName, freq,
         noteParams
       )
       lastSynthMode.value = mode
@@ -114,10 +136,11 @@ export default {
     }
 
     return {
-      instruments, currentInstrument, lastNote, lastSynthMode,
-      paramsReady,
+      instruments, currentInstrument, currentView, lastNote, lastSynthMode,
+      paramsReady, audioEngine,
       params, accentColor, accentDim,
-      selectInstrument, playNote, muteNote, updateParam, startRecording,
+      selectInstrument, selectRhythmMode, syncRhythmInstrument,
+      playNote, muteNote, updateParam, startRecording,
       onRecordingStop,
     }
   },
